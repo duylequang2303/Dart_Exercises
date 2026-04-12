@@ -1,0 +1,40 @@
+lib/
+├── main.dart                  # Điểm khởi động app
+├── firebase_options.dart      # Config Firebase (tự generate)
+│
+├── core/
+│   ├── theme.dart             # Màu sắc, font, bo góc
+│   ├── constants.dart         # Hằng số dùng chung
+│   └── routes.dart            # Điều hướng màn hình
+│
+├── models/
+│   ├── user_model.dart        # Thông tin người dùng
+│   ├── meal_model.dart        # Bữa ăn
+│   └── activity_model.dart    # Hoạt động
+│
+├── services/
+│   ├── auth_service.dart      # Firebase Auth
+│   ├── firestore_service.dart # Đọc/ghi Firestore
+│   ├── gemini_service.dart    # Gọi AI Coach
+│   └── nutrition_service.dart # Gọi Edamam API
+│
+├── screens/
+│   ├── auth/
+│   │   └── login_screen.dart
+│   ├── onboarding/
+│   │   └── onboarding_screen.dart
+│   ├── home/
+│   │   └── home_screen.dart
+│   ├── nutrition/
+│   │   └── nutrition_screen.dart
+│   ├── activity/
+│   │   └── activity_screen.dart
+│   ├── ai_coach/
+│   │   └── ai_coach_screen.dart
+│   └── profile/
+│       └── profile_screen.dart
+│
+└── widgets/
+    ├── stat_card.dart         # Card số liệu tái sử dụng
+    ├── progress_ring.dart     # Vòng tròn tiến độ
+    └── bottom_nav.dart        # Thanh điều hướng dưới
