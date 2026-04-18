@@ -14,8 +14,8 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'screens/media_picker_screen.dart';
 import 'screens/audio_player_screen.dart';
-import 'screens/music_player_screen.dart';
-import 'screens/user_profile_screen.dart';
+import 'package:baitapvenhatuan8/screens/music_player_screen.dart';
+import 'package:baitapvenhatuan8/screens/user_profile_screen.dart';
 
 void main() {
   // Khởi tạo SQLite cho Windows/Desktop
@@ -24,15 +24,28 @@ void main() {
     databaseFactory = databaseFactoryFfi;
   }
 
-  // Chạy ứng dụng đầy đủ với 4 Tab điều hướng
-  runApp(const MediaPickerApp());
+  // Chọn màn hình muốn chạy và comment các màn hình còn lại:
+
+  // Bài 1, 2, 3: Chọn ảnh/video
+  //runApp(const MainAppWrapper(home: MediaPickerScreen()));
+
+  // Bài 4: Phát nhạc cơ bản
+  runApp(const MainAppWrapper(home: AudioPlayerScreen()));
+
+  // Bài 5: Phát nhạc nâng cao (Pro)
+  // runApp(const MainAppWrapper(home: MusicPlayerScreen()));
+
+  // Bài 6: Quản lý Hồ sơ gửi SQLite
+  // runApp(const MainAppWrapper(home: UserProfileScreen()));
 }
 
 // ==============================================================
-// Ứng dụng gốc
+// Ứng dụng gốc để cung cấp Theme và điều hướng
 // ==============================================================
-class MediaPickerApp extends StatelessWidget {
-  const MediaPickerApp({super.key});
+class MainAppWrapper extends StatelessWidget {
+  final Widget home;
+
+  const MainAppWrapper({super.key, required this.home});
 
   @override
   Widget build(BuildContext context) {
@@ -53,68 +66,7 @@ class MediaPickerApp extends StatelessWidget {
           centerTitle: true,
         ),
       ),
-      home: const MainShell(),
-    );
-  }
-}
-
-// ==============================================================
-// MainShell: Khung chứa BottomNavigationBar 4 tab
-// ==============================================================
-class MainShell extends StatefulWidget {
-  const MainShell({super.key});
-
-  @override
-  State<MainShell> createState() => _MainShellState();
-}
-
-class _MainShellState extends State<MainShell> {
-  int _currentIndex = 0;
-
-  // Dùng IndexedStack để giữ trạng thái các màn hình khi chuyển tab
-  final List<Widget> _screens = const [
-    MediaPickerScreen(), // Tab 0: Chọn/Chụp ảnh, Quay video
-    AudioPlayerScreen(), // Tab 1: Trình phát nhạc đơn giản
-    MusicPlayerScreen(), // Tab 2: Trình phát nhạc chuyên nghiệp
-    UserProfileScreen(), // Tab 3: Quản lý Hồ sơ người dùng
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _screens),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (i) => setState(() => _currentIndex = i),
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF1A1A2E),
-        selectedItemColor: const Color(0xFF6C63FF),
-        unselectedItemColor: Colors.white30,
-        selectedFontSize: 11,
-        unselectedFontSize: 11,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.perm_media_outlined),
-            activeIcon: Icon(Icons.perm_media_rounded),
-            label: 'Bộ Sưu Tập',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.audiotrack_outlined),
-            activeIcon: Icon(Icons.audiotrack_rounded),
-            label: 'Nhạc Cơ Bản',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.album_outlined),
-            activeIcon: Icon(Icons.album_rounded),
-            label: 'Nhạc Pro',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline_rounded),
-            activeIcon: Icon(Icons.person_rounded),
-            label: 'Hồ Sơ',
-          ),
-        ],
-      ),
+      home: home,
     );
   }
 }

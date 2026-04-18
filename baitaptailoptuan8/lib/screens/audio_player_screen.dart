@@ -174,15 +174,15 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
           ),
         ),
         child: SafeArea(
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             child: Column(
               children: [
                 // -----------------------------------------------
                 // Ảnh bìa album hình vuông có bo góc (TĨNH)
                 // -----------------------------------------------
-                Expanded(
-                  flex: 4,
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
                   child: Center(
                     child: Container(
                       width: 220,

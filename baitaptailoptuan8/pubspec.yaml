@@ -29,6 +29,10 @@ dependencies:
   path: ^1.9.0
   camera: ^0.12.0+1
   camera_windows: ^0.2.6+4
+  
+  # Import Bai 5, 6
+  baitapvenhatuan8:
+    path: ./baitapvenhatuan8
 
 dev_dependencies:
   flutter_test:
