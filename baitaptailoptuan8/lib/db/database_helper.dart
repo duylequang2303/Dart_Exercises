@@ -3,6 +3,7 @@
 // Su dung pattern Singleton de dam bao chi co 1 instance duy nhat
 // =============================================================
 
+import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as p;
 
@@ -44,10 +45,13 @@ class DatabaseHelper {
   Future<Database> _initDatabase() async {
     // Lay duong dan thu muc luu DB tren thiet bi
     final dbPath = await getDatabasesPath();
-    final fullPath = p.join(dbPath, _dbName);
+    final path = p.join(dbPath, _dbName);
+    
+    // Day la dong quan trong: de ban thay file nam o dau trong Terminal
+    debugPrint('--- DATABASE PATH: $path ---');
 
     return openDatabase(
-      fullPath,
+      path,
       version: _dbVersion,
       onCreate: _onCreate,
     );

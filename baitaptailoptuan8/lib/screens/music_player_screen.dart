@@ -52,27 +52,27 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen>
   // Danh sach bai hat demo
   final List<MusicTrack> _tracks = const [
     MusicTrack(
-      title: 'Midnight Dreams',
+      title: 'Giấc Mơ Đêm Khuya',
       artist: 'Luna Eclipse',
-      album: 'Neon Nights',
+      album: 'Đêm Neon',
       assetPath: 'audios/sample1.wav',
       primaryColor: Color(0xFF6C63FF),
       accentColor: Color(0xFF9B59B6),
       genreIcon: Icons.auto_awesome,
     ),
     MusicTrack(
-      title: 'Ocean Waves',
+      title: 'Sóng Biển Xanh',
       artist: 'Blue Horizon',
-      album: 'Deep Blue',
+      album: 'Đại Dương Sâu',
       assetPath: 'audios/sample2.wav',
       primaryColor: Color(0xFF00BCD4),
       accentColor: Color(0xFF2196F3),
       genreIcon: Icons.waves,
     ),
     MusicTrack(
-      title: 'Sunset Vibes',
+      title: 'Hoàng Hôn Rực Rỡ',
       artist: 'Golden Hour',
-      album: 'Summer Glow',
+      album: 'Hè Vàng',
       assetPath: 'audios/sample3.wav',
       primaryColor: Color(0xFFFF9800),
       accentColor: Color(0xFFFF6B9D),
@@ -165,8 +165,8 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Khong the phat "${_tracks[index].title}". '
-              'Hay thay file MP3 that vao assets/audios/',
+              'Không thể phát "${_tracks[index].title}". '
+              'Hãy thay file nhạc thật vào assets/audios/',
             ),
             backgroundColor: Colors.orange.shade800,
             behavior: SnackBarBehavior.floating,
@@ -445,7 +445,7 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${track.artist} 窶｢ ${track.album}',
+                  '${track.artist} • ${track.album}',
                   style: TextStyle(
                     color: track.primaryColor.withValues(alpha: 0.85),
                     fontSize: 14,
@@ -661,7 +661,7 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen>
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
-                    '${_tracks.length} bai',
+                    '${_tracks.length} bài',
                     style: TextStyle(
                       color: _tracks[_currentIndex].primaryColor,
                       fontSize: 11,
@@ -732,9 +732,8 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen>
                     ),
                   ),
                   subtitle: Text(
-                    '${t.artist} 窶｢ ${t.album}',
-                    style: const TextStyle(
-                        color: Colors.white38, fontSize: 11),
+                    '${t.artist} • ${t.album}',
+                    style: const TextStyle(color: Colors.white38, fontSize: 11),
                   ),
                   trailing: isActive
                       ? Icon(Icons.equalizer_rounded,

@@ -1,6 +1,6 @@
 // =============================================================
-// Bai tap 1 & 2: Media Picker Screen
-// Tinh nang: Chon/chup anh, chon/quay video, xem anh toan man hinh
+// Bài tập 1 & 2: Màn hình Chọn Ảnh/Video (Media Picker)
+// Tính năng: Chọn/Chụp ảnh, Chọn/Quay video, Xem ảnh toàn màn hình
 // =============================================================
 
 import 'dart:io';
@@ -8,6 +8,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_player/video_player.dart';
+
+import 'windows_camera_screen.dart';
 
 // ==============================================================
 // Man hinh chinh cua Media Picker
@@ -47,7 +49,7 @@ class _MediaPickerScreenState extends State<MediaPickerScreen> {
         setState(() => _selectedImage = File(pickedFile.path));
       }
     } catch (e) {
-      _showErrorSnackBar('Loi khi chon anh: $e');
+      _showErrorSnackBar('Lỗi khi chọn ảnh: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -58,7 +60,15 @@ class _MediaPickerScreenState extends State<MediaPickerScreen> {
   // ============================================================
   Future<void> _captureImageFromCamera() async {
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-      _showErrorSnackBar('Tinh nang chup anh tu Camera khong duoc ho tro tren Windows/Desktop.');
+      // Gọi giao diện Custom Camera vừa vẽ dành cho Windows
+      final file = await Navigator.push<XFile?>(
+        context,
+        MaterialPageRoute(builder: (_) => const WindowsCameraScreen()),
+      );
+      if (file != null) {
+        await _disposeVideo();
+        setState(() => _selectedImage = File(file.path));
+      }
       return;
     }
     setState(() => _isLoading = true);
@@ -73,7 +83,7 @@ class _MediaPickerScreenState extends State<MediaPickerScreen> {
         setState(() => _selectedImage = File(pickedFile.path));
       }
     } catch (e) {
-      _showErrorSnackBar('Loi khi chup anh: $e');
+      _showErrorSnackBar('Lỗi khi chụp ảnh: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -95,9 +105,9 @@ class _MediaPickerScreenState extends State<MediaPickerScreen> {
       }
     } catch (e) {
       if (Platform.isWindows) {
-        _showErrorSnackBar('Loi video (Windows): Can file .mp4 chuan hoac thieu codec. Chi tiet: $e');
+        _showErrorSnackBar('Lỗi video (Windows): Cần file .mp4 chuẩn hoặc thiếu codec. Chi tiết: $e');
       } else {
-        _showErrorSnackBar('Loi khi chon video: $e');
+        _showErrorSnackBar('Lỗi khi chọn video: $e');
       }
     } finally {
       setState(() => _isLoading = false);
@@ -109,7 +119,7 @@ class _MediaPickerScreenState extends State<MediaPickerScreen> {
   // ============================================================
   Future<void> _recordVideoFromCamera() async {
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-      _showErrorSnackBar('Tinh nang quay video tu Camera khong duoc ho tro tren Windows/Desktop.');
+      _showErrorSnackBar('Tính năng quay video từ Camera không được hỗ trợ trên Windows/Desktop.');
       return;
     }
     setState(() => _isLoading = true);
@@ -126,7 +136,7 @@ class _MediaPickerScreenState extends State<MediaPickerScreen> {
         setState(() => _selectedImage = null);
       }
     } catch (e) {
-      _showErrorSnackBar('Loi khi quay video: $e');
+      _showErrorSnackBar('Lỗi khi quay video: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -191,7 +201,7 @@ class _MediaPickerScreenState extends State<MediaPickerScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Media Picker',
+          'Bộ Sưu Tập',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         flexibleSpace: Container(
@@ -209,11 +219,11 @@ class _MediaPickerScreenState extends State<MediaPickerScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildSectionTitle('Chon / Chup Media'),
+            _buildSectionTitle('Chọn / Chụp Media'),
             const SizedBox(height: 12),
             _buildActionButtonsGrid(),
             const SizedBox(height: 28),
-            _buildSectionTitle('Ket qua'),
+            _buildSectionTitle('Kết quả'),
             const SizedBox(height: 12),
             _buildMediaPreview(),
           ],
@@ -249,28 +259,28 @@ class _MediaPickerScreenState extends State<MediaPickerScreen> {
         _buildActionCard(
           id: 'btn_pick_image_gallery',
           icon: Icons.photo_library_rounded,
-          label: 'Chon anh\ntư Gallery',
+          label: 'Chọn ảnh\ntừ Thư viện',
           color: const Color(0xFF6C63FF),
           onTap: _isLoading ? null : _pickImageFromGallery,
         ),
         _buildActionCard(
           id: 'btn_capture_image_camera',
           icon: Icons.camera_alt_rounded,
-          label: 'Chup anh\ntư Camera',
+          label: 'Chụp ảnh\ntừ Camera',
           color: const Color(0xFF00BCD4),
           onTap: _isLoading ? null : _captureImageFromCamera,
         ),
         _buildActionCard(
           id: 'btn_pick_video_gallery',
           icon: Icons.video_library_rounded,
-          label: 'Chon video\ntư Gallery',
+          label: 'Chọn video\ntừ Thư viện',
           color: const Color(0xFFFF6B9D),
           onTap: _isLoading ? null : _pickVideoFromGallery,
         ),
         _buildActionCard(
           id: 'btn_record_video_camera',
           icon: Icons.videocam_rounded,
-          label: 'Quay video\ntư Camera',
+          label: 'Quay video\ntừ Camera',
           color: const Color(0xFFFF9800),
           onTap: _isLoading ? null : _recordVideoFromCamera,
         ),
@@ -382,7 +392,7 @@ class _MediaPickerScreenState extends State<MediaPickerScreen> {
             Icon(Icons.perm_media_rounded, size: 56, color: Color(0xFF4A4A6A)),
             SizedBox(height: 12),
             Text(
-              'Chua co media nao duoc chon',
+              'Chưa có ảnh hoặc video nào được chọn',
               style: TextStyle(color: Colors.white38, fontSize: 14),
             ),
           ],
@@ -413,7 +423,7 @@ class _MediaPickerScreenState extends State<MediaPickerScreen> {
               Icon(Icons.touch_app, size: 14, color: Color(0xFF9E9EFF)),
               SizedBox(width: 6),
               Text(
-                'Nhan vao anh de xem toan man hinh',
+                'Nhấn vào ảnh để xem toàn màn hình',
                 style: TextStyle(color: Color(0xFF9E9EFF), fontSize: 12),
               ),
             ],
@@ -631,7 +641,7 @@ class FullScreenImage extends StatelessWidget {
                     Icon(Icons.pinch, size: 16, color: Colors.white60),
                     SizedBox(width: 6),
                     Text(
-                      'Chum/Gian de zoom',
+                      'Chụm/Giãn để phóng to thu nhỏ',
                       style: TextStyle(color: Colors.white60, fontSize: 13),
                     ),
                   ],
