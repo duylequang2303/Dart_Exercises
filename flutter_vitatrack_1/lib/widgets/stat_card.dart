@@ -27,8 +27,8 @@ class StatCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap ?? () {}, 
         borderRadius: BorderRadius.circular(VitaTrackTheme.boGocVua),
-        splashColor: mauIcon.withOpacity(0.2), 
-        highlightColor: mauIcon.withOpacity(0.1),
+        splashColor: mauIcon.withValues(alpha: 0.2), 
+        highlightColor: mauIcon.withValues(alpha: 0.1),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(

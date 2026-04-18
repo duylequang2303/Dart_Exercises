@@ -77,7 +77,7 @@ class ProfileTab extends StatelessWidget {
                 const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(color: VitaTrackTheme.mauThanhCong.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
+                  decoration: BoxDecoration(color: VitaTrackTheme.mauThanhCong.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)),
                   child: Text(badgeText, style: const TextStyle(color: VitaTrackTheme.mauThanhCong, fontSize: 10, fontWeight: FontWeight.bold)),
                 ),
               ],

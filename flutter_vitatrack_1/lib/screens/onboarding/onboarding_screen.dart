@@ -1,58 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme.dart';
 import '../../widgets/bottom_nav.dart';
+import 'onboarding_provider.dart';
 
-class OnboardingScreen extends StatefulWidget {
+class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
-  final PageController _pageController = PageController();
-  int _trangHienTai = 0;
-  bool _dangTinhToan = false;
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
+  late PageController _pageController;
 
-  // ===== DỮ LIỆU ĐẦU VÀO ĐÃ NÂNG CẤP =====
-  String _mucTieu = 'Giảm cân';
-  String _gioiTinh = 'Nam';
-  double _chieuCao = 170;
-  double _canNang = 65;
-  String _cuongDo = 'Vừa phải'; // Thêm dữ liệu cường độ
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(onboardingProvider);
+    final notifier = ref.read(onboardingProvider.notifier);
+    
     return Scaffold(
       backgroundColor: VitaTrackTheme.mauNen,
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(),
+            _buildHeader(state, context),
             Expanded(
               child: PageView(
                 controller: _pageController,
                 physics: const NeverScrollableScrollPhysics(), 
-                onPageChanged: (index) => setState(() => _trangHienTai = index),
+                onPageChanged: (index) => notifier.setCurrentPage(index),
                 children: [
-                  _stepChonMucTieu(),
-                  _stepChonGioiTinh(),
-                  _stepNhapThongSo(),
-                  _stepChonCuongDo(), // Bước mới bổ sung
-                  _stepHoanThanh(),
+                  _stepChonMucTieu(state, notifier),
+                  _stepChonGioiTinh(state, notifier),
+                  _stepNhapThongSo(state, notifier),
+                  _stepChonCuongDo(state, notifier),
+                  _stepHoanThanh(state, notifier),
                 ],
               ),
             ),
-            _buildFooter(),
+            _buildFooter(state, notifier, context),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
-    double progress = (_trangHienTai + 1) / 5; // Chia làm 5 bước
+  Widget _buildHeader(OnboardingState state, BuildContext context) {
+    double progress = (state.currentPage + 1) / 5;
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Column(
@@ -60,14 +68,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              if (_trangHienTai > 0 && !_dangTinhToan)
+              if (state.currentPage > 0 && !state.isCalculating)
                 IconButton(
                   icon: const Icon(Icons.arrow_back_ios_new, color: VitaTrackTheme.mauChu, size: 20),
                   onPressed: () => _pageController.previousPage(duration: const Duration(milliseconds: 400), curve: Curves.easeOutCubic),
                 )
               else
                 const SizedBox(width: 48),
-              Text('Bước ${_trangHienTai + 1}/5', style: const TextStyle(color: VitaTrackTheme.mauChuPhu, fontWeight: FontWeight.bold)),
+              Text('Bước ${state.currentPage + 1}/5', style: const TextStyle(color: VitaTrackTheme.mauChuPhu, fontWeight: FontWeight.bold)),
               TextButton(
                 onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const BottomNav())),
                 child: const Text('Bỏ qua', style: TextStyle(color: VitaTrackTheme.mauChuPhu)),
@@ -91,74 +99,74 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   // BƯỚC 1: MỤC TIÊU
-  Widget _stepChonMucTieu() {
+  Widget _stepChonMucTieu(OnboardingState state, OnboardingNotifier notifier) {
     return _buildStepLayout(
       title: 'Mục tiêu của bạn?',
       desc: 'Chúng tôi sẽ điều chỉnh lượng calo dựa trên lựa chọn này.',
       content: Column(
         children: [
-          _buildSelectCard('Giảm cân', Icons.trending_down, _mucTieu == 'Giảm cân', () => setState(() => _mucTieu = 'Giảm cân')),
+          _buildSelectCard('Giảm cân', Icons.trending_down, state.goal == 'Giảm cân', () => notifier.setGoal('Giảm cân')),
           const SizedBox(height: 16),
-          _buildSelectCard('Giữ dáng', Icons.accessibility_new, _mucTieu == 'Giữ dáng', () => setState(() => _mucTieu = 'Giữ dáng')),
+          _buildSelectCard('Giữ dáng', Icons.accessibility_new, state.goal == 'Giữ dáng', () => notifier.setGoal('Giữ dáng')),
           const SizedBox(height: 16),
-          _buildSelectCard('Tăng cơ', Icons.fitness_center, _mucTieu == 'Tăng cơ', () => setState(() => _mucTieu = 'Tăng cơ')),
+          _buildSelectCard('Tăng cơ', Icons.fitness_center, state.goal == 'Tăng cơ', () => notifier.setGoal('Tăng cơ')),
         ],
       ),
     );
   }
 
   // BƯỚC 2: GIỚI TÍNH
-  Widget _stepChonGioiTinh() {
+  Widget _stepChonGioiTinh(OnboardingState state, OnboardingNotifier notifier) {
     return _buildStepLayout(
       title: 'Giới tính của bạn?',
       desc: 'Yếu tố quan trọng để tính chỉ số chuyển hóa cơ bản (BMR).',
       content: Row(
         children: [
-          Expanded(child: _buildGenderCard('Nam', Icons.male, _gioiTinh == 'Nam', () => setState(() => _gioiTinh = 'Nam'))),
+          Expanded(child: _buildGenderCard('Nam', Icons.male, state.gender == 'Nam', () => notifier.setGender('Nam'))),
           const SizedBox(width: 16),
-          Expanded(child: _buildGenderCard('Nữ', Icons.female, _gioiTinh == 'Nữ', () => setState(() => _gioiTinh = 'Nữ'))),
+          Expanded(child: _buildGenderCard('Nữ', Icons.female, state.gender == 'Nữ', () => notifier.setGender('Nữ'))),
         ],
       ),
     );
   }
 
   // BƯỚC 3: CHIỀU CAO & CÂN NẶNG
-  Widget _stepNhapThongSo() {
+  Widget _stepNhapThongSo(OnboardingState state, OnboardingNotifier notifier) {
     return _buildStepLayout(
       title: 'Chỉ số cơ thể',
       desc: 'Hãy kéo thanh trượt để chọn chỉ số chính xác nhất.',
       content: Column(
         children: [
-          _buildSliderInput('Chiều cao', _chieuCao, 100, 220, 'cm', (val) => setState(() => _chieuCao = val)),
+          _buildSliderInput('Chiều cao', state.height, 100, 220, 'cm', (val) => notifier.setHeight(val)),
           const SizedBox(height: 32),
-          _buildSliderInput('Cân nặng', _canNang, 30, 150, 'kg', (val) => setState(() => _canNang = val)),
+          _buildSliderInput('Cân nặng', state.weight, 30, 150, 'kg', (val) => notifier.setWeight(val)),
         ],
       ),
     );
   }
 
   // BƯỚC 4: BỔ SUNG CƯỜNG ĐỘ VẬN ĐỘNG (ĂN ĐIỂM)
-  Widget _stepChonCuongDo() {
+  Widget _stepChonCuongDo(OnboardingState state, OnboardingNotifier notifier) {
     return _buildStepLayout(
       title: 'Bạn vận động thế nào?',
       desc: 'Mức độ hoạt động hàng ngày của bạn.',
       content: Column(
         children: [
-          _buildSelectCard('Ít vận động', Icons.chair_alt, _cuongDo == 'Ít vận động', () => setState(() => _cuongDo = 'Ít vận động')),
+          _buildSelectCard('Ít vận động', Icons.chair_alt, state.intensity == 'Ít vận động', () => notifier.setIntensity('Ít vận động')),
           const SizedBox(height: 12),
-          _buildSelectCard('Vừa phải', Icons.directions_walk, _cuongDo == 'Vừa phải', () => setState(() => _cuongDo = 'Vừa phải')),
+          _buildSelectCard('Vừa phải', Icons.directions_walk, state.intensity == 'Vừa phải', () => notifier.setIntensity('Vừa phải')),
           const SizedBox(height: 12),
-          _buildSelectCard('Năng động', Icons.run_circle_outlined, _cuongDo == 'Năng động', () => setState(() => _cuongDo = 'Năng động')),
+          _buildSelectCard('Năng động', Icons.run_circle_outlined, state.intensity == 'Năng động', () => notifier.setIntensity('Năng động')),
           const SizedBox(height: 12),
-          _buildSelectCard('Vận động viên', Icons.workspace_premium, _cuongDo == 'Vận động viên', () => setState(() => _cuongDo = 'Vận động viên')),
+          _buildSelectCard('Vận động viên', Icons.workspace_premium, state.intensity == 'Vận động viên', () => notifier.setIntensity('Vận động viên')),
         ],
       ),
     );
   }
 
   // BƯỚC 5: HOÀN THÀNH VÀ AI PHÂN TÍCH
-  Widget _stepHoanThanh() {
-    if (_dangTinhToan) {
+  Widget _stepHoanThanh(OnboardingState state, OnboardingNotifier notifier) {
+    if (state.isCalculating) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -167,7 +175,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             const SizedBox(height: 32),
             const Text('AI đang thiết lập kế hoạch...', style: TextStyle(color: VitaTrackTheme.mauChinh, fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
-            Text('Dựa trên mức độ $_cuongDo của bạn', style: const TextStyle(color: VitaTrackTheme.mauChuPhu)),
+            Text('Dựa trên mức độ ${state.intensity} của bạn', style: const TextStyle(color: VitaTrackTheme.mauChuPhu)),
           ],
         ),
       );
@@ -178,7 +186,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       desc: 'Lộ trình cá nhân hóa của bạn đã hoàn tất.',
       content: Container(
         padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(color: VitaTrackTheme.mauCard, borderRadius: BorderRadius.circular(24), border: Border.all(color: VitaTrackTheme.mauChinh.withOpacity(0.3))),
+        decoration: BoxDecoration(color: VitaTrackTheme.mauCard, borderRadius: BorderRadius.circular(24), border: Border.all(color: VitaTrackTheme.mauChinh.withValues(alpha: 0.3))),
         child: Column(
           children: [
             const Text('Mục tiêu năng lượng hàng ngày:', style: TextStyle(color: VitaTrackTheme.mauChuPhu)),
@@ -201,7 +209,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildFooter() {
+  Widget _buildFooter(OnboardingState state, OnboardingNotifier notifier, BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: SizedBox(
@@ -212,25 +220,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             backgroundColor: VitaTrackTheme.mauChinh,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             elevation: 8,
-            shadowColor: VitaTrackTheme.mauChinh.withOpacity(0.4),
+            shadowColor: VitaTrackTheme.mauChinh.withValues(alpha: 0.4),
           ),
           onPressed: () async {
             HapticFeedback.mediumImpact();
-            if (_trangHienTai < 4) {
+            if (state.currentPage < 4) {
               _pageController.nextPage(duration: const Duration(milliseconds: 500), curve: Curves.easeOutCubic);
               
-              // Giả lập tính toán AI khi đến bước cuối
-              if (_trangHienTai == 3) {
-                setState(() => _dangTinhToan = true);
-                await Future.delayed(const Duration(seconds: 2));
-                setState(() => _dangTinhToan = false);
+              if (state.currentPage == 3) {
+                await notifier.simulateAICalculation();
               }
             } else {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const BottomNav()));
             }
           },
           child: Text(
-            _trangHienTai == 4 ? 'Bắt đầu hành trình' : 'Tiếp theo',
+            state.currentPage == 4 ? 'Bắt đầu hành trình' : 'Tiếp theo',
             style: const TextStyle(color: VitaTrackTheme.mauNen, fontWeight: FontWeight.bold, fontSize: 16),
           ),
         ),
@@ -264,7 +269,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         duration: const Duration(milliseconds: 250),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: selected ? VitaTrackTheme.mauChinh.withOpacity(0.1) : VitaTrackTheme.mauCard,
+          color: selected ? VitaTrackTheme.mauChinh.withValues(alpha: 0.1) : VitaTrackTheme.mauCard,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: selected ? VitaTrackTheme.mauChinh : Colors.transparent, width: 2),
         ),
@@ -288,7 +293,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         duration: const Duration(milliseconds: 250),
         height: 140,
         decoration: BoxDecoration(
-          color: selected ? VitaTrackTheme.mauChinh.withOpacity(0.1) : VitaTrackTheme.mauCard,
+          color: selected ? VitaTrackTheme.mauChinh.withValues(alpha: 0.1) : VitaTrackTheme.mauCard,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: selected ? VitaTrackTheme.mauChinh : Colors.transparent, width: 2),
         ),

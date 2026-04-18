@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
-import 'core/theme.dart';
-import 'core/route.dart'; // Chỉ cần gọi "Bản đồ" này là đủ
-import 'core/constants.dart'; // Gọi hằng số để lấy tên App
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_vitatrack_1/core/theme.dart';
+import 'package:flutter_vitatrack_1/core/route.dart'; // Chỉ cần gọi "Bản đồ" này là đủ
+import 'package:flutter_vitatrack_1/core/constants.dart'; // Gọi hằng số để lấy tên App
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
-void main() {
-  runApp(const VitaTrackApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  runApp(const ProviderScope(child: VitaTrackApp()));
 }
 
 class VitaTrackApp extends StatelessWidget {

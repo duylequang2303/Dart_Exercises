@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../core/theme.dart';
-import '../screens/home/home_screen.dart';
-import '../screens/nutrition/nutrition_screen.dart';
-import '../screens/activity/activity_screen.dart';
-import '../screens/ai_coach/ai_coach_screen.dart';
-import '../screens/profile/profile_screen.dart';
+import 'package:flutter_vitatrack_1/core/theme.dart';
+import 'package:flutter_vitatrack_1/screens/home/home_screen.dart';
+import 'package:flutter_vitatrack_1/features/nutrition/presentation/screens/nutrition_screen.dart';
+import 'package:flutter_vitatrack_1/features/workout/presentation/screens/workout_screen.dart';
+// AiCoach not migrated - temporarily commented out
+// import 'package:flutter_vitatrack_1/screens/ai_coach/ai_coach_screen.dart';
+import 'package:flutter_vitatrack_1/screens/profile/profile_screen.dart';
 
 class BottomNav extends StatefulWidget {
   const BottomNav({super.key});
@@ -19,8 +20,7 @@ class _BottomNavState extends State<BottomNav> {
   final List<Widget> _danhSachManHinh = [
     const HomeScreen(),
     const NutritionScreen(),
-    const ActivityScreen(),
-    const AiCoachScreen(),
+    const WorkoutScreen(),
     const ProfileScreen(),
   ];
 
@@ -44,8 +44,7 @@ class _BottomNavState extends State<BottomNav> {
             _taoNutNav(0, Icons.home_filled, 'Trang chủ'),
             _taoNutNav(1, Icons.restaurant_outlined, 'Dinh dưỡng'),
             _taoNutNav(2, Icons.show_chart, 'Hoạt động'),
-            _taoNutNav(3, Icons.smart_toy_outlined, 'AI Coach'),
-            _taoNutNav(4, Icons.person_outline, 'Cá nhân'),
+            _taoNutNav(3, Icons.person_outline, 'Cá nhân'),
           ],
         ),
       ),

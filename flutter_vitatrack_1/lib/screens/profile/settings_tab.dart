@@ -29,7 +29,7 @@ class SettingsTab extends StatelessWidget {
         
         // NÚT ĐĂNG XUẤT
         Material(
-          color: VitaTrackTheme.mauNguyHiem.withOpacity(0.15),
+          color: VitaTrackTheme.mauNguyHiem.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(VitaTrackTheme.boGocLon),
           child: InkWell(
             onTap: () { print("Đăng xuất"); },
@@ -55,7 +55,7 @@ class SettingsTab extends StatelessWidget {
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: mau.withOpacity(0.1), shape: BoxShape.circle),
+        decoration: BoxDecoration(color: mau.withValues(alpha: 0.1), shape: BoxShape.circle),
         child: Icon(icon, color: mau, size: 20),
       ),
       title: Text(title, style: const TextStyle(color: VitaTrackTheme.mauChu, fontSize: 15)),

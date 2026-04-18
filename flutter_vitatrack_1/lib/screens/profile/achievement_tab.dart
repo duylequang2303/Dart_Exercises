@@ -26,9 +26,9 @@ class _AchievementTabState extends State<AchievementTab> {
           decoration: BoxDecoration(
             color: VitaTrackTheme.mauCard,
             borderRadius: BorderRadius.circular(VitaTrackTheme.boGocLon),
-            border: Border.all(color: VitaTrackTheme.mauChinh.withOpacity(0.2)),
+            border: Border.all(color: VitaTrackTheme.mauChinh.withValues(alpha: 0.2)),
             boxShadow: [
-              BoxShadow(color: VitaTrackTheme.mauChinh.withOpacity(0.05), blurRadius: 20, spreadRadius: 2)
+              BoxShadow(color: VitaTrackTheme.mauChinh.withValues(alpha: 0.05), blurRadius: 20, spreadRadius: 2)
             ]
           ),
           child: Column(
@@ -42,7 +42,7 @@ class _AchievementTabState extends State<AchievementTab> {
                   const Spacer(),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(color: VitaTrackTheme.mauThanhCong.withOpacity(0.15), borderRadius: BorderRadius.circular(20)),
+                    decoration: BoxDecoration(color: VitaTrackTheme.mauThanhCong.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
                     child: const Text('Hạng Bạc', style: TextStyle(color: VitaTrackTheme.mauThanhCong, fontWeight: FontWeight.bold)),
                   ),
                 ],

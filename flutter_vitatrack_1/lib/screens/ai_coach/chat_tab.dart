@@ -131,7 +131,7 @@ class _ChatTabState extends State<ChatTab> {
       scrollDirection: Axis.horizontal,
       physics: const BouncingScrollPhysics(),
       child: Row(
-        children: _goiYChat.map((goiY) {
+        children: _goiYChat.map<Widget>((goiY) {
           return Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: ActionChip(
@@ -355,7 +355,7 @@ class _DotAnimationState extends State<_DotAnimation> with SingleTickerProviderS
       builder: (_, __) {
         return Row(
           mainAxisSize: MainAxisSize.min,
-          children: List.generate(3, (i) {
+          children: List<Widget>.generate(3, (i) {
             final offset = ((_ctrl.value * 3) - i).clamp(0.0, 1.0);
             final opacity = (offset < 0.5 ? offset : 1.0 - offset) * 2;
             return Padding(

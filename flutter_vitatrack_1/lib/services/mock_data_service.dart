@@ -7,10 +7,10 @@ class MockDataService extends ChangeNotifier {
 
   // === DỮ LIỆU GỐC ===
   int _steps = 8234;
-  int _stepGoal = 10000;
+  final int _stepGoal = 10000;
   int _heartRate = 72;
   int _caloNap = 1760;
-  int _caloMucTieu = 2200;
+  final int _caloMucTieu = 2200;
   int _lyNuoc = 6;
   String buoiDangChon = "Bữa trưa";
 

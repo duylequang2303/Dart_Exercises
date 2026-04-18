@@ -76,7 +76,7 @@ class VitaTrackTheme {
     borderRadius: BorderRadius.circular(boGocVua),
     boxShadow: [
       BoxShadow(
-        color: Colors.black.withOpacity(0.2),
+        color: Colors.black.withValues(alpha: 0.2),
         blurRadius: 10,
         offset: const Offset(0, 4),
       ),
@@ -86,7 +86,7 @@ class VitaTrackTheme {
   static BoxDecoration hopVienNeon = BoxDecoration(
     color: mauCard,
     borderRadius: BorderRadius.circular(boGocVua),
-    border: Border.all(color: mauChinh.withOpacity(0.3), width: 1),
+    border: Border.all(color: mauChinh.withValues(alpha: 0.3), width: 1),
   );
 
   // ==========================================

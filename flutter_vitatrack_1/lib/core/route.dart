@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../screens/auth/login_screen.dart';
-import '../widgets/bottom_nav.dart';
+import 'package:flutter_vitatrack_1/screens/auth/login_screen.dart';
+import 'package:flutter_vitatrack_1/widgets/bottom_nav.dart';
 
 class VitaTrackRoutes {
   // Định nghĩa tên các con đường

@@ -1,12 +1,21 @@
 import 'package:flutter/material.dart';
-import '../../core/theme.dart';
-import '../../screens/notification/notification_screen.dart';
+import 'package:flutter_vitatrack_1/core/theme.dart';
+import 'package:flutter_vitatrack_1/screens/notification/notification_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_vitatrack_1/features/health/presentation/providers/health_provider.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final health = ref.watch(healthProvider);
+    final stepProgress = (health.steps / 10000.0).clamp(0.0, 1.0);
+    final sleepHours = health.sleepHours == 0.0 ? 7.5 : health.sleepHours;
+    final sleepH = sleepHours.truncate();
+    final sleepM = ((sleepHours - sleepH) * 60).round();
+    final sleepText = '${sleepH}h ${sleepM}m';
+
     return Scaffold(
       backgroundColor: VitaTrackTheme.mauNen,
       body: SafeArea(
@@ -145,7 +154,7 @@ class HomeScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         _taoThongSoNho(Icons.local_fire_department, VitaTrackTheme.mauNguyHiem, '1,850', 'kcal'),
-                        _taoThongSoNho(Icons.do_not_step, VitaTrackTheme.mauThanhCong, '8,234', 'bước'),
+                        _taoThongSoNho(Icons.do_not_step, VitaTrackTheme.mauThanhCong, '${health.steps}', 'bước'),
                         _taoThongSoNho(Icons.water_drop, VitaTrackTheme.mauChinh, '1.8', 'lít'),
                       ],
                     ),
@@ -181,9 +190,9 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Expanded(child: _taoCardHoatDong(Icons.do_not_step, 'Số bước', '8,234', '10,000', VitaTrackTheme.mauThanhCong, 0.85)),
+                  Expanded(child: _taoCardHoatDong(Icons.do_not_step, 'Số bước', '${health.steps}', '10,000', VitaTrackTheme.mauThanhCong, stepProgress)),
                   const SizedBox(width: 16),
-                  Expanded(child: _taoCardHoatDong(Icons.nightlight_round, 'Giấc ngủ', '7h 30m', '8h', VitaTrackTheme.mauPhu, 0.9)),
+                  Expanded(child: _taoCardHoatDong(Icons.nightlight_round, 'Giấc ngủ', sleepText, '8h', VitaTrackTheme.mauPhu, (sleepHours / 8.0).clamp(0.0, 1.0))),
                 ],
               ),
               const SizedBox(height: 32),
@@ -240,9 +249,9 @@ class HomeScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: VitaTrackTheme.mauCardNhat.withOpacity(0.5), 
+                  color: VitaTrackTheme.mauCardNhat.withValues(alpha: 0.5), 
                   borderRadius: BorderRadius.circular(VitaTrackTheme.boGocLon),
-                  border: Border.all(color: VitaTrackTheme.mauChinh.withOpacity(0.3)),
+                  border: Border.all(color: VitaTrackTheme.mauChinh.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
