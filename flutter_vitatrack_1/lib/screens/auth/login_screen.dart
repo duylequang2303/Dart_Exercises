@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme.dart';
-import '../onboarding/onboarding_screen.dart'; // <-- Đã thêm dòng này để gọi màn Onboarding
+import '../../features/auth/presentation/providers/auth_provider.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   // Kiểm soát tab Đăng nhập / Đăng ký
   bool dangNhap = true;
 
@@ -22,7 +23,28 @@ class _LoginScreenState extends State<LoginScreen> {
   bool anMatKhau = true;
 
   @override
+  void dispose() {
+    emailController.dispose();
+    matKhauController.dispose();
+    tenController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    ref.listen<AuthState>(authProvider, (previous, next) {
+      if (next.loi != null && next.loi != previous?.loi) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.loi!),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    });
+
+    final authState = ref.watch(authProvider);
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -185,15 +207,26 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    // <-- Lệnh chuyển sang màn Onboarding đã được thêm vào đây
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const OnboardingScreen()),
-                    );
+                  onPressed: authState.dangTai ? null : () {
+                    final email = emailController.text.trim();
+                    final matKhau = matKhauController.text.trim();
+                    if (dangNhap) {
+                      ref.read(authProvider.notifier).dangNhap(email, matKhau);
+                    } else {
+                      final ten = tenController.text.trim();
+                      ref.read(authProvider.notifier).dangKy(email, matKhau, ten);
+                    }
                   },
-                  child: Text(dangNhap ? 'Đăng nhập' : 'Đăng ký'),
+                  child: authState.dangTai 
+                      ? const SizedBox(
+                          width: 24, 
+                          height: 24, 
+                          child: CircularProgressIndicator(
+                            color: VitaTrackTheme.mauNen,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Text(dangNhap ? 'Đăng nhập' : 'Đăng ký'),
                 ),
               ),
 

@@ -1,5 +1,5 @@
 # 📊 VitaTrack – Cập nhật tiến độ thực tế
-> Quét code ngày 18/04/2026. Không thay đổi cấu trúc.
+> Cập nhật ngày 21/04/2026. Không thay đổi cấu trúc.
 
 ---
 
@@ -10,6 +10,9 @@
 - [x] `features/auth/data/models/user_model.dart` — fromFirebaseUser
 - [x] `features/auth/domain/entities/user_entity.dart`
 - [x] `features/auth/presentation/providers/auth_provider.dart` — AuthNotifier + authProvider
+- [x] `screens/auth/login_screen.dart` — đã kết nối authProvider, dùng ConsumerStatefulWidget, ref.listen hiện SnackBar lỗi, loading state trong nút, KHÔNG tự navigate
+- [x] `features/auth/presentation/widgets/auth_wrapper.dart` — ConsumerWidget kiểm tra dangTai / nguoiDung / null, route guard hoàn chỉnh
+- [x] `main.dart` — bỏ initialRoute/routes, dùng home: AuthWrapper()
 
 ### Nutrition
 - [x] `features/nutrition/domain/entities/meal_entity.dart`
@@ -19,7 +22,8 @@
 - [x] `features/nutrition/data/models/meal_model.dart`
 - [x] `features/nutrition/data/datasources/mock_nutrition_datasource.dart`
 - [x] `features/nutrition/data/repositories/nutrition_repository_impl.dart`
-- [x] `features/nutrition/presentation/providers/nutrition_provider.dart`
+- [x] `features/nutrition/data/datasources/firestore_nutrition_datasource.dart` — đọc/ghi Firestore theo users/{uid}/nutrition/{date}, tự tạo document mới nếu chưa có, đầy đủ incrementWater/decrementWater/addMeal
+- [x] `features/nutrition/presentation/providers/nutrition_provider.dart` — đã refactor: xóa Mock, inject FirestoreNutritionDataSource + uid, load() đọc Firestore thật
 - [x] `features/nutrition/presentation/screens/` — nutrition_screen, today_tab, week_tab, add_food_screen...
 
 ### Workout
@@ -41,11 +45,10 @@
 - [x] `features/health/data/health_repository.dart` (mock)
 - [x] `features/health/presentation/providers/health_provider.dart`
 
-### Core / Setup
-- [x] `main.dart` — Firebase.initializeApp + ProviderScope
+### Core / Services
 - [x] `firebase_options.dart`
 - [x] `core/theme.dart`, `core/route.dart`, `core/constants.dart`
-- [x] `screens/auth/login_screen.dart` — UI đầy đủ
+- [x] `core/services/firestore_service.dart` — base layer Firestore, 6 method generic (set/update/get/getCollection/delete/stream), try/catch đầy đủ, firestoreServiceProvider
 - [x] `screens/home/home_screen.dart`
 - [x] `screens/ai_coach/` — ai_coach_screen, chat_tab, analysis_tab, plan_tab
 - [x] `services/mock_data_service.dart`
@@ -54,16 +57,10 @@
 
 ## ❌ CHƯA XONG
 
-### 🔴 Auth (bắt buộc để app chạy thật)
-- [ ] `screens/auth/login_screen.dart` — chưa kết nối authProvider (navigate hardcode sang OnboardingScreen)
-- [ ] `features/auth/presentation/widgets/auth_wrapper.dart` — chưa tồn tại (route guard)
-- [ ] `main.dart` — chưa dùng AuthWrapper, đang dùng `initialRoute: /login` cứng
-
-### 🟠 Firestore
-- [ ] `core/services/firestore_service.dart` — chưa có
+### 🟠 Firestore / Workout
 - [ ] `features/workout/domain/entities/activity_entity.dart` — chưa có
 - [ ] `features/workout/data/models/activity_model.dart` — chưa có
-- [ ] `features/nutrition/data/datasources/firestore_nutrition_datasource.dart` — chưa có (đang dùng mock)
+- [ ] `features/workout/data/datasources/workout_remote_datasource.dart` — chưa có (cần để sync Firestore)
 
 ### 🟡 AI Coach thật
 - [ ] `features/ai/` — toàn bộ folder chưa tồn tại
@@ -73,11 +70,23 @@
 
 ---
 
+## ⚠️ GHI CHÚ CHO TỪNG THÀNH VIÊN
+
+### 👤 Bạn phụ trách Health
+- [ ] `features/health/presentation/providers/health_provider.dart` — cần sửa khi implement sensor thật: xóa `MockDataService.instance`, tạo `HealthDataSource` riêng trong `data/datasources/`, inject qua Provider đúng Clot.md
+
+### 👤 Bạn phụ trách AI Coach
+- [ ] `screens/ai_coach/chat_tab.dart` — đang gọi `MockDataService.instance` trong UI, vi phạm Clot.md. Cần tạo `features/ai/` đúng kiến trúc rồi kết nối provider
+
+### 👤 Bạn phụ trách Workout
+- [ ] Cần tạo thêm `workout_remote_datasource.dart` để sync Firestore
+- [ ] Cần tạo `activity_entity.dart` + `activity_model.dart`
+
+---
+
 ## ⚠️ VI PHẠM CLOT.MD HIỆN TẠI
 
 | File | Vi phạm |
 |------|---------|
-| `screens/auth/login_screen.dart` | Import + navigate sang OnboardingScreen trực tiếp trong UI |
-| `features/nutrition/presentation/providers/nutrition_provider.dart` | Giữ `_dataSource` field, gọi method mock trực tiếp trong Provider |
 | `features/health/presentation/providers/health_provider.dart` | Giữ `MockDataService` trong Provider constructor |
 | `screens/ai_coach/chat_tab.dart` | `MockDataService.instance` gọi trong UI |
