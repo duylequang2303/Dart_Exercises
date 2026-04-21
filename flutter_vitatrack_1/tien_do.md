@@ -70,17 +70,52 @@
 
 ---
 
-## ⚠️ GHI CHÚ CHO TỪNG THÀNH VIÊN
+---
 
-### 👤 Bạn phụ trách Health
-- [ ] `features/health/presentation/providers/health_provider.dart` — cần sửa khi implement sensor thật: xóa `MockDataService.instance`, tạo `HealthDataSource` riêng trong `data/datasources/`, inject qua Provider đúng Clot.md
+## 📋 VIỆC CẦN LÀM THEO TỪNG NGƯỜI
 
-### 👤 Bạn phụ trách AI Coach
-- [ ] `screens/ai_coach/chat_tab.dart` — đang gọi `MockDataService.instance` trong UI, vi phạm Clot.md. Cần tạo `features/ai/` đúng kiến trúc rồi kết nối provider
+### 👤 Bạn phụ trách Nutrition
+🔴 Việc 1: Tạo tính năng tìm kiếm món ăn
+- Tạo food_entity.dart → food_api_datasource.dart → food_search_provider.dart
+- API: Open Food Facts (không cần key)
+  https://world.openfoodfacts.org/cgi/search.pl?search_terms={query}&json=true&page_size=20
+
+🟡 Việc 2: Gắn vào màn hình add_food_screen.dart
+- Ô search → gọi timKiem() → hiện list → chọn món → lưu Firestore
+
+⚠️ Lưu ý: bỏ qua item nếu thiếu calo, inject Dio qua constructor
+
+---
 
 ### 👤 Bạn phụ trách Workout
-- [ ] Cần tạo thêm `workout_remote_datasource.dart` để sync Firestore
-- [ ] Cần tạo `activity_entity.dart` + `activity_model.dart`
+🔴 Việc 1: Tạo tính năng tìm kiếm bài tập
+- Tạo activity_entity.dart → workout_remote_datasource.dart → exercise_search_provider.dart
+- API: wger (không cần key)
+  https://wger.de/api/v2/exercise/?format=json&language=2&term={query}
+  Filter cơ bắp: thêm &muscles={id} (1=Biceps 2=Deltoids 3=Abs 4=Chest 5=Triceps 6=Back)
+
+🟡 Việc 2: Gắn vào workout_screen.dart
+
+🟡 Việc 3: Tạo activity_model.dart để lưu lịch sử tập lên Firestore
+
+---
+
+### 👤 Bạn phụ trách Health
+🔴 Việc 1: Thay mock bằng sensor thật
+- Tạo health_datasource.dart đọc HealthKit/Google Fit
+- Sửa health_provider.dart: xóa MockDataService.instance, inject datasource mới
+
+---
+
+### 👤 Bạn phụ trách AI Coach
+🔴 Việc 1: Tạo features/ai/ đúng kiến trúc
+- Tạo message_entity.dart → gemini_datasource.dart → ai_provider.dart
+
+🟡 Việc 2: Sửa chat_tab.dart
+- Xóa MockDataService.instance trong UI
+- Thay bằng ref.read(aiProvider.notifier)
+
+---
 
 ---
 
