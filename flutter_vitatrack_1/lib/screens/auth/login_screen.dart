@@ -41,6 +41,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         );
       }
+      if (next.thongBao != null && next.thongBao != previous?.thongBao) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.thongBao!),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     });
 
     final authState = ref.watch(authProvider);
@@ -200,6 +208,52 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
               ),
+
+              if (dangNhap)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      final hienTaiEmail = emailController.text.trim();
+                      showDialog(
+                        context: context,
+                        builder: (context) {
+                          final resetEmailController = TextEditingController(text: hienTaiEmail);
+                          return AlertDialog(
+                            backgroundColor: VitaTrackTheme.mauCard,
+                            title: const Text('Đặt lại mật khẩu', style: TextStyle(color: VitaTrackTheme.mauChinh)),
+                            content: TextField(
+                              controller: resetEmailController,
+                              keyboardType: TextInputType.emailAddress,
+                              style: const TextStyle(color: VitaTrackTheme.mauChu),
+                              decoration: const InputDecoration(
+                                labelText: 'Email của bạn',
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('Hủy', style: TextStyle(color: VitaTrackTheme.mauChuPhu)),
+                              ),
+                              ElevatedButton(
+                                onPressed: () {
+                                  final resetEmail = resetEmailController.text.trim();
+                                  if (resetEmail.isNotEmpty) {
+                                    ref.read(authProvider.notifier).quenMatKhau(resetEmail);
+                                    Navigator.pop(context);
+                                  }
+                                },
+                                child: const Text('Gửi'),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                    child: const Text('Quên mật khẩu?', style: TextStyle(color: VitaTrackTheme.mauChinh)),
+                  ),
+                ),
 
               const SizedBox(height: 32),
 

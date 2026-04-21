@@ -7,24 +7,29 @@ class AuthState {
   final UserEntity? nguoiDung;
   final bool dangTai;
   final String? loi;
+  final String? thongBao;
 
   const AuthState({
     this.nguoiDung,
     this.dangTai = false,
     this.loi,
+    this.thongBao,
   });
 
   AuthState copyWith({
     UserEntity? nguoiDung,
     bool? dangTai,
     String? loi,
+    String? thongBao,
     bool xoaLoi = false,
+    bool xoaThongBao = false,
     bool xoaNguoiDung = false,
   }) {
     return AuthState(
       nguoiDung: xoaNguoiDung ? null : nguoiDung ?? this.nguoiDung,
       dangTai: dangTai ?? this.dangTai,
       loi: xoaLoi ? null : loi ?? this.loi,
+      thongBao: xoaThongBao ? null : thongBao ?? this.thongBao,
     );
   }
 }
@@ -44,7 +49,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> dangNhap(String email, String matKhau) async {
-    state = state.copyWith(dangTai: true, xoaLoi: true);
+    state = state.copyWith(dangTai: true, xoaLoi: true, xoaThongBao: true);
     try {
       await _authService.dangNhapEmail(email, matKhau);
     } catch (e) {
@@ -57,7 +62,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> dangKy(String email, String matKhau, String ten) async {
-    state = state.copyWith(dangTai: true, xoaLoi: true);
+    state = state.copyWith(dangTai: true, xoaLoi: true, xoaThongBao: true);
     try {
       await _authService.dangKyEmail(email, matKhau, ten);
     } catch (e) {
@@ -65,6 +70,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
         dangTai: false,
         loi: e.toString().replaceAll('Exception: ', ''),
         xoaNguoiDung: true,
+      );
+    }
+  }
+
+  Future<void> quenMatKhau(String email) async {
+    state = state.copyWith(dangTai: true, xoaLoi: true, xoaThongBao: true);
+    try {
+      await _authService.quenMatKhau(email);
+      state = state.copyWith(
+        dangTai: false,
+        thongBao: 'Email đặt lại mật khẩu đã được gửi',
+      );
+    } catch (e) {
+      state = state.copyWith(
+        dangTai: false,
+        loi: e.toString().replaceAll('Exception: ', ''),
       );
     }
   }

@@ -1,7 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_vitatrack_1/features/auth/data/models/user_model.dart';
 import 'package:flutter_vitatrack_1/features/auth/domain/entities/user_entity.dart';
-
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -59,5 +59,42 @@ class AuthService {
 
   Future<void> dangXuat() async {
     await _auth.signOut();
+  }
+
+  Future<void> quenMatKhau(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case 'user-not-found':
+          throw Exception('Email không tồn tại');
+        case 'invalid-email':
+          throw Exception('Email không hợp lệ');
+        default:
+          throw Exception('Gửi email đặt lại mật khẩu thất bại: ${e.message}');
+      }
+    } catch (e) {
+      throw Exception('Lỗi không xác định khi gửi email: $e');
+    }
+  }
+
+  Future<bool> daHoanThanhOnboarding(String uid) async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('profile')
+          .doc('info')
+          .get();
+      if (doc.exists) {
+        final data = doc.data();
+        if (data != null && data['onboardingDone'] == true) {
+          return true;
+        }
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
   }
 }

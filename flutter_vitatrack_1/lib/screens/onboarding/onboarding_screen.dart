@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme.dart';
 import '../../widgets/bottom_nav.dart';
 import 'onboarding_provider.dart';
+import '../../features/auth/presentation/providers/auth_provider.dart';
+import '../../core/services/user_profile_service.dart';
+import '../../features/auth/presentation/providers/onboarding_status_provider.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -231,7 +234,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 await notifier.simulateAICalculation();
               }
             } else {
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const BottomNav()));
+              final user = ref.read(nguoiDungHienTaiProvider);
+              if (user != null) {
+                final userProfileService = ref.read(userProfileServiceProvider);
+                await userProfileService.saveOnboardingData(user.uid, {
+                  'mucTieu': state.goal,
+                  'gioiTinh': state.gender,
+                  'chieuCao': state.height,
+                  'canNang': state.weight,
+                  'cuongDo': state.intensity,
+                });
+                ref.invalidate(onboardingStatusProvider(user.uid));
+              }
             }
           },
           child: Text(

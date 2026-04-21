@@ -13,6 +13,13 @@
 - [x] `screens/auth/login_screen.dart` — đã kết nối authProvider, dùng ConsumerStatefulWidget, ref.listen hiện SnackBar lỗi, loading state trong nút, KHÔNG tự navigate
 - [x] `features/auth/presentation/widgets/auth_wrapper.dart` — ConsumerWidget kiểm tra dangTai / nguoiDung / null, route guard hoàn chỉnh
 - [x] `main.dart` — bỏ initialRoute/routes, dùng home: AuthWrapper()
+- [x] `features/auth/presentation/providers/onboarding_status_provider.dart` — FutureProvider.autoDispose.family check onboarding status từ Firestore
+- [x] `core/services/user_profile_service.dart` — lưu data onboarding lên users/{uid}/profile/info, userProfileServiceProvider
+- [x] `screens/onboarding/onboarding_screen.dart` — kết nối userProfileService, invalidate onboardingStatusProvider sau khi lưu
+- [x] `features/auth/presentation/widgets/auth_wrapper.dart` — refactor: check onboardingStatusProvider, flow: dangTai → null → onboarding → BottomNav
+- [x] `features/auth/data/auth_service.dart` — thêm daHoanThanhOnboarding() + quenMatKhau()
+- [x] `features/auth/presentation/providers/auth_provider.dart` — thêm thongBao vào AuthState, quenMatKhau() vào AuthNotifier
+- [x] `screens/auth/login_screen.dart` — thêm nút Quên mật khẩu, AlertDialog prefill email, SnackBar xanh khi gửi thành công
 
 ### Nutrition
 - [x] `features/nutrition/domain/entities/meal_entity.dart`
