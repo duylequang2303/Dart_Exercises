@@ -352,7 +352,7 @@ class _DotAnimationState extends State<_DotAnimation> with SingleTickerProviderS
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _ctrl,
-      builder: (_, __) {
+      builder: (_, _) {
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: List<Widget>.generate(3, (i) {

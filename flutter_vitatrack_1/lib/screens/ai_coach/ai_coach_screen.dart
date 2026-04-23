@@ -60,7 +60,7 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Text('AI Coach', style: TextStyle(color: VitaTrackTheme.mauChu, fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
-            Text('Đang hoạt động', style: TextStyle(color: VitaTrackTheme.mauThanhCong.withOpacity(0.8), fontSize: 12)),
+            Text('Đang hoạt động', style: TextStyle(color: VitaTrackTheme.mauThanhCong.withValues(alpha: 0.8), fontSize: 12)),
           ]),
         ],
       ),

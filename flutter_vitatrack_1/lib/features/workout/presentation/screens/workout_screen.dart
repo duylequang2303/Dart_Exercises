@@ -77,7 +77,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
             onTapUp: (_) async {
               setState(() => _pressed = false);
               HapticFeedback.mediumImpact();
-              _showStartMenu(context);
+              _showStartMenu();
             },
             onTapCancel: () => setState(() => _pressed = false),
             child: AnimatedScale(
@@ -105,9 +105,9 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
     );
   }
 
-  void _showStartMenu(BuildContext parentContext) {
+  void _showStartMenu() {
     showModalBottomSheet(
-      context: parentContext,
+      context: context,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) {
         return Container(
@@ -121,9 +121,9 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
               const SizedBox(height: 24),
               const Text('Chọn bài tập', style: TextStyle(color: VitaTrackTheme.mauChu, fontSize: 20, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              _buildStartChoice(parentContext, sheetContext, Icons.directions_run, 'Chạy bộ ngoài trời', VitaTrackTheme.mauChinh),
-              _buildStartChoice(parentContext, sheetContext, Icons.pedal_bike, 'Đạp xe', VitaTrackTheme.mauThanhCong),
-              _buildStartChoice(parentContext, sheetContext, Icons.fitness_center, 'Tập kháng lực', VitaTrackTheme.mauNguyHiem),
+              _buildStartChoice(sheetContext, Icons.directions_run, 'Chạy bộ ngoài trời', VitaTrackTheme.mauChinh),
+              _buildStartChoice(sheetContext, Icons.pedal_bike, 'Đạp xe', VitaTrackTheme.mauThanhCong),
+              _buildStartChoice(sheetContext, Icons.fitness_center, 'Tập kháng lực', VitaTrackTheme.mauNguyHiem),
               const SizedBox(height: 16),
             ],
           ),
@@ -132,7 +132,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
     );
   }
 
-  Widget _buildStartChoice(BuildContext parentContext, BuildContext sheetContext, IconData icon, String title, Color color) {
+  Widget _buildStartChoice(BuildContext sheetContext, IconData icon, String title, Color color) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: color.withValues(alpha: 0.15), shape: BoxShape.circle), child: Icon(icon, color: color)),
@@ -142,14 +142,15 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
         HapticFeedback.lightImpact();
         Navigator.pop(sheetContext);
         final result = await Navigator.push<bool>(
-          parentContext,
+          context,
           PageRouteBuilder(
-            pageBuilder: (_, __, ___) => LiveWorkoutScreen(tenBaiTap: title, iconBaiTap: icon),
-            transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
+            pageBuilder: (_, _, _) => LiveWorkoutScreen(tenBaiTap: title, iconBaiTap: icon),
+            transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: animation, child: child),
           ),
         );
-        if (result == true && mounted) {
-          ScaffoldMessenger.of(parentContext).showSnackBar(SnackBar(content: Text('Đã lưu bài tập $title!'), backgroundColor: VitaTrackTheme.mauThanhCong, behavior: SnackBarBehavior.floating));
+        if (!mounted) return;
+        if (result == true) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Đã lưu bài tập $title!'), backgroundColor: VitaTrackTheme.mauThanhCong, behavior: SnackBarBehavior.floating));
         }
       },
     );

@@ -393,8 +393,8 @@ class _NutThongBao extends StatelessWidget {
         Navigator.push(
           context,
           PageRouteBuilder(
-            pageBuilder: (_, animation, __) => const NotificationScreen(),
-            transitionsBuilder: (_, animation, __, child) {
+            pageBuilder: (_, _, _) => const NotificationScreen(),
+            transitionsBuilder: (_, animation, _, child) {
               return SlideTransition(
                 position: Tween<Offset>(
                   begin: const Offset(1.0, 0.0),

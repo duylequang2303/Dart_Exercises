@@ -15,7 +15,7 @@ class SettingsTab extends StatelessWidget {
             children: [
               _taoMucCaiDat(Icons.track_changes, VitaTrackTheme.mauChinh, 'Mục tiêu cá nhân'),
               _taoDuongKe(),
-              _taoMucCaiDat(Icons.notifications_none, VitaTrackTheme.mauCanhBao ?? Colors.orange, 'Thông báo'),
+              _taoMucCaiDat(Icons.notifications_none, VitaTrackTheme.mauCanhBao, 'Thông báo'),
               _taoDuongKe(),
               _taoMucCaiDat(Icons.palette_outlined, VitaTrackTheme.mauPhu, 'Giao diện'),
               _taoDuongKe(),
@@ -32,7 +32,7 @@ class SettingsTab extends StatelessWidget {
           color: VitaTrackTheme.mauNguyHiem.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(VitaTrackTheme.boGocLon),
           child: InkWell(
-            onTap: () { print("Đăng xuất"); },
+            onTap: () { debugPrint("Đăng xuất"); },
             borderRadius: BorderRadius.circular(VitaTrackTheme.boGocLon),
             child: const Padding(
               padding: EdgeInsets.symmetric(vertical: 16),

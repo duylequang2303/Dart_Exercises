@@ -63,7 +63,7 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen> with Tick
     final hr = 100 + (elapsed.inSeconds % 30);
 
     final countdownAsync = ref.watch(workoutCountdownProvider);
-    int? countdown = countdownAsync.when(data: (v) => v, loading: () => null, error: (_, __) => null);
+    int? countdown = countdownAsync.when(data: (v) => v, loading: () => null, error: (_, _) => null);
 
     return Scaffold(
       backgroundColor: VitaTrackTheme.mauNen,
