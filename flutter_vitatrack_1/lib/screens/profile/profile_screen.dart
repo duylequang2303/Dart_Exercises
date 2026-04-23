@@ -4,14 +4,17 @@ import 'profile_tab.dart';
 import 'achievement_tab.dart';
 import 'settings_tab.dart';
 
-class ProfileScreen extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_vitatrack_1/features/auth/presentation/providers/auth_provider.dart';
+
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   int _tabHienTai = 0;
 
   @override
@@ -48,6 +51,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildHeader() {
+    final user = ref.watch(nguoiDungHienTaiProvider);
+    final displayName = user?.tenHienThi ?? 'Người dùng';
+    final email = user?.email ?? '';
+    final initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U';
+
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Row(
@@ -55,15 +63,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
           CircleAvatar(
             radius: 35,
             backgroundColor: VitaTrackTheme.mauChinh,
-            child: const Text('MA', style: TextStyle(color: VitaTrackTheme.mauNen, fontSize: 24, fontWeight: FontWeight.bold)),
+            child: Text(initial, style: const TextStyle(color: VitaTrackTheme.mauNen, fontSize: 24, fontWeight: FontWeight.bold)),
           ),
           const SizedBox(width: 16),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Minh Anh', style: TextStyle(color: VitaTrackTheme.mauChu, fontSize: 20, fontWeight: FontWeight.bold)),
-                Text('minhanh@email.com', style: TextStyle(color: VitaTrackTheme.mauChuPhu, fontSize: 14)),
+                Text(displayName, style: const TextStyle(color: VitaTrackTheme.mauChu, fontSize: 20, fontWeight: FontWeight.bold)),
+                Text(email, style: const TextStyle(color: VitaTrackTheme.mauChuPhu, fontSize: 14)),
               ],
             ),
           ),
