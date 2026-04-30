@@ -145,10 +145,10 @@
 - [x] Kích hoạt tab AI Coach trên thanh điều hướng `BottomNav`.
 
 ## ❌ CÁC PHẦN BÌNH (AI COACH) CẦN LÀM TIẾP
-🔴 **Việc 1: Kết nối dữ liệu sức khỏe thực tế (Integration)**
-- Hiện tại `userHealthContextProvider` đang dùng **dữ liệu giả (Mock)**.
-- Yêu cầu: Kết nối provider này với `NutritionProvider` (lấy calo, nước thực) và `WorkoutProvider` (lấy số bước, bài tập thực).
-- AI phải tư vấn dựa trên dữ liệu người dùng vừa nhập, không được tư vấn số ảo.
+🔴 **Việc 1: Kết nối dữ liệu thực tế (DẸP BỎ MOCK CONTEXT)**
+- Hiện tại AI đang tư vấn dựa trên dữ liệu giả (ví dụ: luôn mặc định bạn đã đi 5000 bước).
+- Yêu cầu: Kết nối `userHealthContextProvider` với dữ liệu THẬT từ `NutritionProvider` và `WorkoutProvider`.
+- AI phải mắng người dùng nếu họ THỰC SỰ chưa tập gì hôm nay.
 
 🔴 **Việc 2: Chuyển lịch sử Chat lên Firestore (Cloud Sync)**
 - Hiện tại `LocalStorageDataSource` đang dùng `shared_preferences` (chỉ lưu trên máy).
@@ -173,10 +173,10 @@
 - Kết nối API wger: `https://wger.de/api/v2/exercise/?language=2&format=json`
 - Phải có tính năng Search và Filter theo nhóm cơ (Muscles).
 
-🔴 **Việc 2: Giao diện Modern hóa (UI/UX Refactoring)**
+🔴 **Việc 2: Giao diện Modern hóa (XÓA SẠCH MOCK DATA)**
 - Di chuyển UI từ `lib/screens/activity` sang `lib/features/workout/presentation/screens/`.
 - Hiện đại hóa giao diện: dùng Gradient, Glassmorphism và Animation cho các biểu đồ tập luyện.
-- Thay thế toàn bộ dữ liệu Mock (static list) bằng dữ liệu thật từ Provider.
+- Tuyệt đối không dùng `List` bài tập cứng trong code, phải lấy từ `exerciseSearchProvider` (API thật).
 
 🔴 **Việc 3: Kết nối Firestore (Lưu lịch sử tập)**
 - Sử dụng `WorkoutRemoteDataSource` đã có.
@@ -193,3 +193,21 @@
 🔴 **Việc 1: Tích hợp Health Kit (iOS) & Google Fit (Android)**
 - Sử dụng thư viện `health` hoặc `pedometer` để lấy số bước chân, nhịp tim THẬT từ cảm biến điện thoại.
 - Thay thế toàn bộ số 8245 bước (fake) trong `HealthProvider` bằng dữ liệu thực tế này.
+
+## 👤 Bạn phụ trách Nutrition (Tuấn)
+🔴 **Việc 1: Hoàn thiện tính năng Tìm kiếm món ăn (ĐÃ XONG - Rất tốt)**
+- [x] Kết nối Open Food Facts API và lưu món ăn vào `nutritionProvider`.
+
+🔴 **Việc 2: Dashboard & Charts (LOẠI BỎ MOCK DATA)**
+- Thay thế toàn bộ `MockDataService` trong `today_tab.dart` và `nutrition_screen.dart` bằng dữ liệu thật từ `nutritionProvider`.
+- Vẽ biểu đồ tròn (Pie Chart) và Progress Bar hiển thị số liệu thực tế người dùng đã nạp trong ngày.
+
+🔴 **Việc 3: Quản lý Lịch sử & Xóa món ăn**
+- Xây dựng màn hình xem lại lịch sử các ngày trước (lấy dữ liệu từ Firestore).
+- Thêm tính năng **Xóa** một món ăn đã nhập (phải cập nhật lại cả Database và UI).
+
+🔴 **Việc 4: Water Tracker (Theo dõi nước uống thực tế)**
+- Không dùng số giả, phải lưu và tải lượng nước uống trực tiếp từ Firestore.
+
+🟡 **Việc 5: AI Camera thực tế (Gemini Vision)**
+- Thay thế phần giả lập "Cơm Tấm Sườn" bằng việc nhận diện ảnh thật.
