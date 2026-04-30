@@ -168,13 +168,26 @@
 # 📅 Cập nhật ngày 30/04/2026 (Workout & Health Integration)
 
 ## 👤 Bạn phụ trách Workout (Hoàng)
-🔴 **Việc 2: Kết nối API bài tập thực tế (wger API)**
-- Thay thế danh sách bài tập "fake" hiện tại bằng API: `https://wger.de/api/v2/exercise/`
-- Cho phép người dùng tìm kiếm bài tập theo tên hoặc nhóm cơ.
+🔴 **Việc 1: Xây dựng tính năng Tìm kiếm bài tập (API thực tế)**
+- Tạo `exercise_search_provider.dart` để quản lý việc gọi API.
+- Kết nối API wger: `https://wger.de/api/v2/exercise/?language=2&format=json`
+- Phải có tính năng Search và Filter theo nhóm cơ (Muscles).
 
-🔴 **Việc 3: Hoàn thiện luồng lưu dữ liệu tập luyện**
-- Kết nối `WorkoutRemoteDataSource` (đã có) vào nút "Bắt đầu/Kết thúc" tập luyện.
-- Sau khi tập xong, phải tự động đẩy dữ liệu lên Firestore.
+🔴 **Việc 2: Giao diện Modern hóa (UI/UX Refactoring)**
+- Di chuyển UI từ `lib/screens/activity` sang `lib/features/workout/presentation/screens/`.
+- Hiện đại hóa giao diện: dùng Gradient, Glassmorphism và Animation cho các biểu đồ tập luyện.
+- Thay thế toàn bộ dữ liệu Mock (static list) bằng dữ liệu thật từ Provider.
+
+🔴 **Việc 3: Kết nối Firestore (Lưu lịch sử tập)**
+- Sử dụng `WorkoutRemoteDataSource` đã có.
+- Khi người dùng bấm "Lưu" hoặc hoàn thành bài tập, phải đẩy dữ liệu lên Firestore: `users/{uid}/workouts/`.
+
+🔴 **Việc 4: Quản lý trạng thái tập luyện (Live Tracking)**
+- Xây dựng `WorkoutTimerProvider` để theo dõi thời gian tập luyện thực tế khi người dùng đang ở màn hình `LiveWorkoutScreen`.
+- Đảm bảo khi thoát màn hình hoặc tắt máy (Background), timer vẫn chạy đúng.
+
+🟡 **Việc 5: Tóm tắt kiến thức (Documentation)**
+- Viết tài liệu giải thích luồng dữ liệu của phần Workout để chuẩn bị cho buổi bảo vệ đồ án.
 
 ## 👤 Bạn phụ trách Health
 🔴 **Việc 1: Tích hợp Health Kit (iOS) & Google Fit (Android)**
