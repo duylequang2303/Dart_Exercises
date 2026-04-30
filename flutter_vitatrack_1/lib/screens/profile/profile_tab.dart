@@ -196,7 +196,7 @@ class ProfileTab extends ConsumerWidget {
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
-                      value: mucTieu,
+                      initialValue: mucTieu,
                       dropdownColor: VitaTrackTheme.mauCardNhat,
                       style: const TextStyle(color: VitaTrackTheme.mauChu),
                       decoration: const InputDecoration(labelText: 'Mục tiêu', labelStyle: TextStyle(color: VitaTrackTheme.mauChuPhu)),
@@ -205,7 +205,7 @@ class ProfileTab extends ConsumerWidget {
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
-                      value: cuongDo,
+                      initialValue: cuongDo,
                       dropdownColor: VitaTrackTheme.mauCardNhat,
                       style: const TextStyle(color: VitaTrackTheme.mauChu),
                       decoration: const InputDecoration(labelText: 'Cường độ vận động', labelStyle: TextStyle(color: VitaTrackTheme.mauChuPhu)),

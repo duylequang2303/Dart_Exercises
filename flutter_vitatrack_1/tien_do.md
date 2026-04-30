@@ -132,3 +132,33 @@
 |------|---------|
 | `features/health/presentation/providers/health_provider.dart` | Giữ `MockDataService` trong Provider constructor |
 | `screens/ai_coach/chat_tab.dart` | `MockDataService.instance` gọi trong UI |
+
+---
+
+# 📅 Cập nhật ngày 30/04/2026 (AI Coach Integration)
+
+## ✅ CÁC PHẦN ĐÃ HOÀN THÀNH (Duy đã fix & chuẩn hóa)
+- [x] Chuyển đổi toàn bộ `http` sang `Dio` (Tuân thủ Clot.md).
+- [x] Cấu trúc lại folder `features/AI_Coach` theo Clean Architecture (Data/Domain/Presentation).
+- [x] Tích hợp `flutter_dotenv` để bảo mật API Key (không để key trong code).
+- [x] Fix lỗi duplicate code và các cảnh báo deprecated lints.
+- [x] Kích hoạt tab AI Coach trên thanh điều hướng `BottomNav`.
+
+## ❌ CÁC PHẦN BẠN PHỤ TRÁCH AI COACH CẦN LÀM TIẾP
+🔴 **Việc 1: Kết nối dữ liệu sức khỏe thực tế (Integration)**
+- Hiện tại `userHealthContextProvider` đang dùng **dữ liệu giả (Mock)**.
+- Yêu cầu: Kết nối provider này với `NutritionProvider` (lấy calo, nước thực) và `WorkoutProvider` (lấy số bước, bài tập thực).
+- AI phải tư vấn dựa trên dữ liệu người dùng vừa nhập, không được tư vấn số ảo.
+
+🔴 **Việc 2: Chuyển lịch sử Chat lên Firestore (Cloud Sync)**
+- Hiện tại `LocalStorageDataSource` đang dùng `shared_preferences` (chỉ lưu trên máy).
+- Yêu cầu: Viết `FirestoreAiCoachDataSource` để lưu và tải lịch sử chat từ Firebase Firestore.
+- Phải đảm bảo đổi máy vẫn thấy lại lịch sử chat.
+
+🟡 **Việc 3: Hoàn thiện tính năng Giọng nói (Speech-to-Text)**
+- Icon Micro trên UI hiện tại chưa có code xử lý.
+- Yêu cầu: Tích hợp thư viện nhận diện giọng nói để user có thể nói chuyện với AI.
+
+🟡 **Việc 4: Xử lý giới hạn API và Thông báo chủ động**
+- Xử lý lỗi khi hết quota Groq API (Rate limit).
+- Nghiên cứu Push Notification để AI Coach chủ động nhắc nhở người dùng khi họ lười tập hoặc thiếu nước.

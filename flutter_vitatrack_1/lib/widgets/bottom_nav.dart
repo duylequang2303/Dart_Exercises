@@ -4,8 +4,7 @@ import 'package:flutter_vitatrack_1/core/theme.dart';
 import 'package:flutter_vitatrack_1/screens/home/home_screen.dart';
 import 'package:flutter_vitatrack_1/features/nutrition/presentation/screens/nutrition_screen.dart';
 import 'package:flutter_vitatrack_1/features/workout/presentation/screens/workout_screen.dart';
-// AiCoach not migrated - temporarily commented out
-// import 'package:flutter_vitatrack_1/screens/ai_coach/ai_coach_screen.dart';
+import 'package:flutter_vitatrack_1/features/AI_Coach/presentation/screens/ai_coach_screen.dart';
 import 'package:flutter_vitatrack_1/screens/profile/profile_screen.dart';
 
 class BottomNav extends StatefulWidget {
@@ -21,6 +20,7 @@ class _BottomNavState extends State<BottomNav> {
     const HomeScreen(),
     const NutritionScreen(),
     const WorkoutScreen(),
+    const AiCoachScreen(),
     const ProfileScreen(),
   ];
 
@@ -44,7 +44,8 @@ class _BottomNavState extends State<BottomNav> {
             _taoNutNav(0, Icons.home_filled, 'Trang chủ'),
             _taoNutNav(1, Icons.restaurant_outlined, 'Dinh dưỡng'),
             _taoNutNav(2, Icons.show_chart, 'Hoạt động'),
-            _taoNutNav(3, Icons.person_outline, 'Cá nhân'),
+            _taoNutNav(3, Icons.psychology_outlined, 'AI Coach'),
+            _taoNutNav(4, Icons.person_outline, 'Cá nhân'),
           ],
         ),
       ),
