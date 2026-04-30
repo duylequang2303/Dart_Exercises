@@ -193,3 +193,18 @@
 🔴 **Việc 1: Tích hợp Health Kit (iOS) & Google Fit (Android)**
 - Sử dụng thư viện `health` hoặc `pedometer` để lấy số bước chân, nhịp tim THẬT từ cảm biến điện thoại.
 - Thay thế toàn bộ số 8245 bước (fake) trong `HealthProvider` bằng dữ liệu thực tế này.
+
+## 👤 Bạn phụ trách Nutrition (Tuấn)
+🔴 **Việc 1: Xây dựng Dashboard Dinh dưỡng (Charts)**
+- Vẽ biểu đồ tròn (Pie Chart) hiển thị tỷ lệ Protein/Carbs/Fat trong ngày.
+- Hiển thị thanh tiến trình (Progress Bar) lượng Calo đã nạp so với mục tiêu.
+
+🔴 **Việc 2: Quản lý Lịch sử ăn uống (Nutrition History)**
+- Cho phép người dùng xem lại danh sách món ăn của các ngày trước đó.
+- Tính năng **Xóa** món ăn nếu lỡ nhập sai.
+
+🔴 **Việc 3: Water Tracker (Theo dõi nước uống)**
+- Xây dựng giao diện và logic lưu lượng nước uống hàng ngày vào Firestore.
+
+🟡 **Việc 4: AI Camera thực tế (Gemini Vision)**
+- Thay thế phần giả lập bằng việc gửi ảnh lên AI (Gemini) để nhận diện món ăn và ước tính calo thực tế.
