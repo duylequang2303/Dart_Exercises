@@ -65,9 +65,9 @@
 ## ❌ CHƯA XONG
 
 ### 🟠 Firestore / Workout
-- [ ] `features/workout/domain/entities/activity_entity.dart` — chưa có
-- [ ] `features/workout/data/models/activity_model.dart` — chưa có
-- [ ] `features/workout/data/datasources/workout_remote_datasource.dart` — chưa có (cần để sync Firestore)
+- [x] `features/workout/domain/entities/activity_entity.dart` — chưa có
+- [x] `features/workout/data/models/activity_model.dart` — chưa có
+- [x] `features/workout/data/datasources/workout_remote_datasource.dart` — chưa có (cần để sync Firestore)
 
 ### 🟡 AI Coach thật
 - [ ] `features/ai/` — toàn bộ folder chưa tồn tại
