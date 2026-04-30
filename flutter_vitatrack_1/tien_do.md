@@ -144,7 +144,7 @@
 - [x] Fix lỗi duplicate code và các cảnh báo deprecated lints.
 - [x] Kích hoạt tab AI Coach trên thanh điều hướng `BottomNav`.
 
-## ❌ CÁC PHẦN BẠN PHỤ TRÁCH AI COACH CẦN LÀM TIẾP
+## ❌ CÁC PHẦN BÌNH (AI COACH) CẦN LÀM TIẾP
 🔴 **Việc 1: Kết nối dữ liệu sức khỏe thực tế (Integration)**
 - Hiện tại `userHealthContextProvider` đang dùng **dữ liệu giả (Mock)**.
 - Yêu cầu: Kết nối provider này với `NutritionProvider` (lấy calo, nước thực) và `WorkoutProvider` (lấy số bước, bài tập thực).
@@ -162,3 +162,21 @@
 🟡 **Việc 4: Xử lý giới hạn API và Thông báo chủ động**
 - Xử lý lỗi khi hết quota Groq API (Rate limit).
 - Nghiên cứu Push Notification để AI Coach chủ động nhắc nhở người dùng khi họ lười tập hoặc thiếu nước.
+
+---
+
+# 📅 Cập nhật ngày 30/04/2026 (Workout & Health Integration)
+
+## 👤 Bạn phụ trách Workout (Hoàng)
+🔴 **Việc 2: Kết nối API bài tập thực tế (wger API)**
+- Thay thế danh sách bài tập "fake" hiện tại bằng API: `https://wger.de/api/v2/exercise/`
+- Cho phép người dùng tìm kiếm bài tập theo tên hoặc nhóm cơ.
+
+🔴 **Việc 3: Hoàn thiện luồng lưu dữ liệu tập luyện**
+- Kết nối `WorkoutRemoteDataSource` (đã có) vào nút "Bắt đầu/Kết thúc" tập luyện.
+- Sau khi tập xong, phải tự động đẩy dữ liệu lên Firestore.
+
+## 👤 Bạn phụ trách Health
+🔴 **Việc 1: Tích hợp Health Kit (iOS) & Google Fit (Android)**
+- Sử dụng thư viện `health` hoặc `pedometer` để lấy số bước chân, nhịp tim THẬT từ cảm biến điện thoại.
+- Thay thế toàn bộ số 8245 bước (fake) trong `HealthProvider` bằng dữ liệu thực tế này.
