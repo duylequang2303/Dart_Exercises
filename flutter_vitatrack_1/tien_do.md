@@ -144,7 +144,7 @@
 - [x] Fix lỗi duplicate code và các cảnh báo deprecated lints.
 - [x] Kích hoạt tab AI Coach trên thanh điều hướng `BottomNav`.
 
-## ❌ CÁC PHẦN BẠN PHỤ TRÁCH AI COACH CẦN LÀM TIẾP
+## ❌ CÁC PHẦN BÌNH (AI COACH) CẦN LÀM TIẾP
 🔴 **Việc 1: Kết nối dữ liệu sức khỏe thực tế (Integration)**
 - Hiện tại `userHealthContextProvider` đang dùng **dữ liệu giả (Mock)**.
 - Yêu cầu: Kết nối provider này với `NutritionProvider` (lấy calo, nước thực) và `WorkoutProvider` (lấy số bước, bài tập thực).
@@ -162,3 +162,34 @@
 🟡 **Việc 4: Xử lý giới hạn API và Thông báo chủ động**
 - Xử lý lỗi khi hết quota Groq API (Rate limit).
 - Nghiên cứu Push Notification để AI Coach chủ động nhắc nhở người dùng khi họ lười tập hoặc thiếu nước.
+
+---
+
+# 📅 Cập nhật ngày 30/04/2026 (Workout & Health Integration)
+
+## 👤 Bạn phụ trách Workout (Hoàng)
+🔴 **Việc 1: Xây dựng tính năng Tìm kiếm bài tập (API thực tế)**
+- Tạo `exercise_search_provider.dart` để quản lý việc gọi API.
+- Kết nối API wger: `https://wger.de/api/v2/exercise/?language=2&format=json`
+- Phải có tính năng Search và Filter theo nhóm cơ (Muscles).
+
+🔴 **Việc 2: Giao diện Modern hóa (UI/UX Refactoring)**
+- Di chuyển UI từ `lib/screens/activity` sang `lib/features/workout/presentation/screens/`.
+- Hiện đại hóa giao diện: dùng Gradient, Glassmorphism và Animation cho các biểu đồ tập luyện.
+- Thay thế toàn bộ dữ liệu Mock (static list) bằng dữ liệu thật từ Provider.
+
+🔴 **Việc 3: Kết nối Firestore (Lưu lịch sử tập)**
+- Sử dụng `WorkoutRemoteDataSource` đã có.
+- Khi người dùng bấm "Lưu" hoặc hoàn thành bài tập, phải đẩy dữ liệu lên Firestore: `users/{uid}/workouts/`.
+
+🔴 **Việc 4: Quản lý trạng thái tập luyện (Live Tracking)**
+- Xây dựng `WorkoutTimerProvider` để theo dõi thời gian tập luyện thực tế khi người dùng đang ở màn hình `LiveWorkoutScreen`.
+- Đảm bảo khi thoát màn hình hoặc tắt máy (Background), timer vẫn chạy đúng.
+
+🟡 **Việc 5: Tóm tắt kiến thức (Documentation)**
+- Viết tài liệu giải thích luồng dữ liệu của phần Workout để chuẩn bị cho buổi bảo vệ đồ án.
+
+## 👤 Bạn phụ trách Health
+🔴 **Việc 1: Tích hợp Health Kit (iOS) & Google Fit (Android)**
+- Sử dụng thư viện `health` hoặc `pedometer` để lấy số bước chân, nhịp tim THẬT từ cảm biến điện thoại.
+- Thay thế toàn bộ số 8245 bước (fake) trong `HealthProvider` bằng dữ liệu thực tế này.
