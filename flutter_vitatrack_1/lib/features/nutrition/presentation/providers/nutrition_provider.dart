@@ -36,25 +36,25 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
 
   Future<void> load() async {
     if (_uid == null) return;
-    final e = await _datasource.getNutritionToday(_uid!);
+    final e = await _datasource.getNutritionToday(_uid);
     state = NutritionState.fromEntity(e);
   }
 
   Future<void> uongNuoc() async {
     if (_uid == null) return;
-    await _datasource.incrementWater(_uid!);
+    await _datasource.incrementWater(_uid);
     await load();
   }
 
   Future<void> botNuoc() async {
     if (_uid == null) return;
-    await _datasource.decrementWater(_uid!);
+    await _datasource.decrementWater(_uid);
     await load();
   }
 
   Future<void> themMonAn(int calo, double p, double c, double f) async {
     if (_uid == null) return;
-    await _datasource.addMeal(_uid!, calo, p, c, f);
+    await _datasource.addMeal(_uid, calo, p, c, f);
     await load();
   }
 }
