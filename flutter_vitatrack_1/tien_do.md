@@ -195,16 +195,19 @@
 - Thay thế toàn bộ số 8245 bước (fake) trong `HealthProvider` bằng dữ liệu thực tế này.
 
 ## 👤 Bạn phụ trách Nutrition (Tuấn)
-🔴 **Việc 1: Xây dựng Dashboard Dinh dưỡng (Charts)**
-- Vẽ biểu đồ tròn (Pie Chart) hiển thị tỷ lệ Protein/Carbs/Fat trong ngày.
-- Hiển thị thanh tiến trình (Progress Bar) lượng Calo đã nạp so với mục tiêu.
+🔴 **Việc 1: Hoàn thiện tính năng Tìm kiếm món ăn (ĐÃ XONG - Rất tốt)**
+- [x] Kết nối Open Food Facts API và lưu món ăn vào `nutritionProvider`.
 
-🔴 **Việc 2: Quản lý Lịch sử ăn uống (Nutrition History)**
-- Cho phép người dùng xem lại danh sách món ăn của các ngày trước đó.
-- Tính năng **Xóa** món ăn nếu lỡ nhập sai.
+🔴 **Việc 2: Dashboard & Charts (LOẠI BỎ MOCK DATA)**
+- Thay thế toàn bộ `MockDataService` trong `today_tab.dart` và `nutrition_screen.dart` bằng dữ liệu thật từ `nutritionProvider`.
+- Vẽ biểu đồ tròn (Pie Chart) và Progress Bar hiển thị số liệu thực tế người dùng đã nạp trong ngày.
 
-🔴 **Việc 3: Water Tracker (Theo dõi nước uống)**
-- Xây dựng giao diện và logic lưu lượng nước uống hàng ngày vào Firestore.
+🔴 **Việc 3: Quản lý Lịch sử & Xóa món ăn**
+- Xây dựng màn hình xem lại lịch sử các ngày trước (lấy dữ liệu từ Firestore).
+- Thêm tính năng **Xóa** một món ăn đã nhập (phải cập nhật lại cả Database và UI).
 
-🟡 **Việc 4: AI Camera thực tế (Gemini Vision)**
-- Thay thế phần giả lập bằng việc gửi ảnh lên AI (Gemini) để nhận diện món ăn và ước tính calo thực tế.
+🔴 **Việc 4: Water Tracker (Theo dõi nước uống thực tế)**
+- Không dùng số giả, phải lưu và tải lượng nước uống trực tiếp từ Firestore.
+
+🟡 **Việc 5: AI Camera thực tế (Gemini Vision)**
+- Thay thế phần giả lập "Cơm Tấm Sườn" bằng việc nhận diện ảnh thật.
