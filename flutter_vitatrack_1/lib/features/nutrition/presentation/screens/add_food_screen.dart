@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_vitatrack_1/core/theme.dart';
 
-// Đảm bảo các import này chính xác với cấu trúc thư mục của bạn
+// Import các provider và entity
 import 'package:flutter_vitatrack_1/features/nutrition/presentation/providers/nutrition_provider.dart';
 import 'package:flutter_vitatrack_1/features/nutrition/presentation/providers/food_search_provider.dart';
 import 'package:flutter_vitatrack_1/features/nutrition/domain/entities/food_entity.dart';
@@ -30,7 +30,6 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Theo dõi trạng thái tìm kiếm từ API
     final apiResults = ref.watch(foodSearchProvider);
     final searchNotifier = ref.read(foodSearchProvider.notifier);
 
@@ -38,43 +37,34 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
       backgroundColor: VitaTrackTheme.mauNen,
       appBar: AppBar(
         backgroundColor: VitaTrackTheme.mauCard,
-        title: const Text(
-          'Thêm bữa ăn',
-          style: TextStyle(
-            color: VitaTrackTheme.mauChu, 
-            fontWeight: FontWeight.bold
-          ),
-        ),
+        title: const Text('Thêm bữa ăn',
+            style: TextStyle(
+                color: VitaTrackTheme.mauChu, fontWeight: FontWeight.bold)),
         iconTheme: const IconThemeData(color: VitaTrackTheme.mauChu),
         elevation: 0,
       ),
       body: Column(
         children: [
-          // Thanh tìm kiếm món ăn
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: TextField(
               onChanged: (v) {
                 setState(() => _query = v);
-                // Trigger tìm kiếm khi người dùng nhập liệu
                 searchNotifier.timKiem(v);
               },
               style: const TextStyle(color: VitaTrackTheme.mauChu),
               decoration: InputDecoration(
-                hintText: 'Tìm kiếm món ăn (pho, milk...)',
+                hintText: 'Tìm kiếm món ăn (ví dụ: pho, milk...)',
                 hintStyle: const TextStyle(color: VitaTrackTheme.mauChuPhu),
                 prefixIcon: const Icon(Icons.search, color: VitaTrackTheme.mauChinh),
                 fillColor: VitaTrackTheme.mauCard,
                 filled: true,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: BorderSide.none,
-                ),
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: BorderSide.none),
               ),
             ),
           ),
-
-          // Banner AI Camera
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: GestureDetector(
@@ -83,24 +73,23 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(colors: [
-                    VitaTrackTheme.mauChinh.withOpacity(0.15),
-                    VitaTrackTheme.mauPhu.withOpacity(0.15),
+                    VitaTrackTheme.mauChinh.withValues(alpha: 0.15),
+                    VitaTrackTheme.mauPhu.withValues(alpha: 0.15),
                   ]),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: VitaTrackTheme.mauChinh.withOpacity(0.4),
-                  ),
+                      color: VitaTrackTheme.mauChinh.withValues(alpha: 0.4)),
                 ),
-                child: Row(
+                child: const Row(
                   children: [
-                    const Icon(Icons.camera_alt_rounded,
+                    Icon(Icons.camera_alt_rounded,
                         color: VitaTrackTheme.mauChinh, size: 22),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Chụp ảnh nhận diện AI',
+                          Text('Chụp ảnh nhận diện AI',
                               style: TextStyle(
                                   color: VitaTrackTheme.mauChu,
                                   fontWeight: FontWeight.bold)),
@@ -110,14 +99,13 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
                         ],
                       ),
                     ),
-                    const Icon(Icons.arrow_forward_ios_rounded,
+                    Icon(Icons.arrow_forward_ios_rounded,
                         color: VitaTrackTheme.mauChinh, size: 14),
                   ],
                 ),
               ),
             ),
           ),
-
           const Padding(
             padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: Align(
@@ -129,15 +117,11 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
                       fontSize: 16)),
             ),
           ),
-
-          // Danh sách hiển thị kết quả
           Expanded(
             child: apiResults.isEmpty
                 ? Center(
                     child: Text(
-                      _query.isEmpty 
-                          ? 'Nhập tên món ăn để tìm kiếm' 
-                          : 'Không tìm thấy kết quả phù hợp',
+                      _query.isEmpty ? 'Nhập tên món ăn để tìm kiếm' : 'Không tìm thấy kết quả',
                       style: const TextStyle(color: VitaTrackTheme.mauChuPhu),
                     ),
                   )
@@ -166,7 +150,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
             width: 45,
             height: 45,
             decoration: BoxDecoration(
-              color: VitaTrackTheme.mauChinh.withOpacity(0.1),
+              color: VitaTrackTheme.mauChinh.withValues(alpha: 0.1),
               shape: BoxShape.circle,
               image: item.hinhAnh != null
                   ? DecorationImage(
@@ -272,7 +256,7 @@ class _AiCameraSheetState extends ConsumerState<_AiCameraSheet> {
     );
   }
 
-  Widget _buildLoading() => Column(mainAxisSize: MainAxisSize.min, children: const [
+  Widget _buildLoading() => const Column(mainAxisSize: MainAxisSize.min, children: [
         SizedBox(height: 12),
         CircularProgressIndicator(color: VitaTrackTheme.mauChinh, strokeWidth: 3),
         SizedBox(height: 18),
@@ -332,7 +316,7 @@ class _AiCameraSheetState extends ConsumerState<_AiCameraSheet> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-          color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(20)),
+          color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
       child: Text(text,
           style: TextStyle(
               color: color, fontWeight: FontWeight.bold, fontSize: 12)),
