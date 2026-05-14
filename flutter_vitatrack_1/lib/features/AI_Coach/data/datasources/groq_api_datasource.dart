@@ -19,7 +19,7 @@ class GroqApiException implements Exception {
 /// Đây là nơi DUY NHẤT được phép gọi Groq API
 class GroqApiDataSource {
   static const String _baseUrl = 'https://api.groq.com/openai/v1';
-  static const String _model = 'llama3-70b-8192';
+  static const String _model = 'llama-3.3-70b-versatile';
 
   final String _apiKey;
   final Dio _dio;

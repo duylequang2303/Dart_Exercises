@@ -15,7 +15,11 @@ import '../../domain/usecases/get_chat_history_usecase.dart';
 
 // ─── Groq API Key ─────────────────────────────────────────────
 
-final String kGroqApiKey = dotenv.env['GROQ_API_KEY'] ?? '';
+String get kGroqApiKey {
+  final key = dotenv.env['GROQ_API_KEY'] ?? '';
+  print('=== GROQ KEY loaded: ${key.isEmpty ? "EMPTY!" : "OK"} ===');
+  return key;
+}
 
 // ─── Infrastructure ───────────────────────────────────────────
 
@@ -24,7 +28,12 @@ final sharedPreferencesProvider = FutureProvider<SharedPreferences>((ref) async 
 });
 
 final dioProvider = Provider<Dio>((ref) {
-  return Dio();
+  final dio = Dio(BaseOptions(
+    baseUrl: 'https://api.groq.com/openai/v1',
+    connectTimeout: const Duration(seconds: 30),
+    receiveTimeout: const Duration(seconds: 60),
+  ));
+  return dio;
 });
 
 // ─── DataSources ──────────────────────────────────────────────
@@ -36,42 +45,59 @@ final groqApiDataSourceProvider = Provider<GroqApiDataSource>((ref) {
   );
 });
 
-final localStorageDataSourceProvider = Provider<LocalStorageDataSource>((ref) {
+// Dùng nullable để tránh throw khi SharedPreferences chưa sẵn sàng
+final localStorageDataSourceProvider = Provider<LocalStorageDataSource?>((ref) {
   final prefsAsync = ref.watch(sharedPreferencesProvider);
   return prefsAsync.when(
     data: (prefs) => LocalStorageDataSource(prefs),
-    loading: () => throw Exception('SharedPreferences chưa sẵn sàng'),
-    error: (e, _) => throw Exception('Lỗi khởi tạo SharedPreferences: $e'),
+    loading: () => null,
+    error: (e, _) {
+      print('=== SharedPreferences ERROR: $e ===');
+      return null;
+    },
   );
 });
 
 // ─── Repository ───────────────────────────────────────────────
 
-final aiCoachRepositoryProvider = Provider<AiCoachRepository>((ref) {
+final aiCoachRepositoryProvider = Provider<AiCoachRepository?>((ref) {
+  final localDataSource = ref.watch(localStorageDataSourceProvider);
+  if (localDataSource == null) return null;
+
   return AiCoachRepositoryImpl(
     groqDataSource: ref.watch(groqApiDataSourceProvider),
-    localDataSource: ref.watch(localStorageDataSourceProvider),
+    localDataSource: localDataSource,
   );
 });
 
 // ─── UseCases ─────────────────────────────────────────────────
 
-final sendChatMessageUseCaseProvider = Provider<SendChatMessageUseCase>((ref) {
-  return SendChatMessageUseCase(ref.watch(aiCoachRepositoryProvider));
+final sendChatMessageUseCaseProvider = Provider<SendChatMessageUseCase?>((ref) {
+  final repo = ref.watch(aiCoachRepositoryProvider);
+  if (repo == null) return null;
+  return SendChatMessageUseCase(repo);
 });
 
-final getHealthAnalysisUseCaseProvider = Provider<GetHealthAnalysisUseCase>((ref) {
-  return GetHealthAnalysisUseCase(ref.watch(aiCoachRepositoryProvider));
+final getHealthAnalysisUseCaseProvider = Provider<GetHealthAnalysisUseCase?>((ref) {
+  final repo = ref.watch(aiCoachRepositoryProvider);
+  if (repo == null) return null;
+  return GetHealthAnalysisUseCase(repo);
 });
 
-final getCoachPlanUseCaseProvider = Provider<GetCoachPlanUseCase>((ref) {
-  return GetCoachPlanUseCase(ref.watch(aiCoachRepositoryProvider));
+final getCoachPlanUseCaseProvider = Provider<GetCoachPlanUseCase?>((ref) {
+  final repo = ref.watch(aiCoachRepositoryProvider);
+  if (repo == null) return null;
+  return GetCoachPlanUseCase(repo);
 });
 
-final updateTaskCompletionUseCaseProvider = Provider<UpdateTaskCompletionUseCase>((ref) {
-  return UpdateTaskCompletionUseCase(ref.watch(aiCoachRepositoryProvider));
+final updateTaskCompletionUseCaseProvider = Provider<UpdateTaskCompletionUseCase?>((ref) {
+  final repo = ref.watch(aiCoachRepositoryProvider);
+  if (repo == null) return null;
+  return UpdateTaskCompletionUseCase(repo);
 });
 
-final getChatHistoryUseCaseProvider = Provider<GetChatHistoryUseCase>((ref) {
-  return GetChatHistoryUseCase(ref.watch(aiCoachRepositoryProvider));
-});
+final getChatHistoryUseCaseProvider = Provider<GetChatHistoryUseCase?>((ref) {
+  final repo = ref.watch(aiCoachRepositoryProvider);
+  if (repo == null) return null;
+  return GetChatHistoryUseCase(repo);
+});

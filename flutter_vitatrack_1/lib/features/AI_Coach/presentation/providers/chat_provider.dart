@@ -38,7 +38,6 @@ class ChatNotifier extends StateNotifier<ChatState> {
     _loadChatHistory();
   }
 
-  // Mock context - sau này thay bằng dữ liệu thực từ health feature
   UserHealthContext get _healthContext => const UserHealthContext(
         stepsToday: 8290,
         caloriesBurned: 450,
@@ -52,7 +51,12 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   Future<void> _loadChatHistory() async {
     try {
+      // Chờ useCase không null (SharedPreferences cần thời gian load)
       final useCase = _ref.read(getChatHistoryUseCaseProvider);
+      if (useCase == null) {
+        _addWelcomeMessage();
+        return;
+      }
       final history = await useCase.execute();
       if (history.isEmpty) {
         _addWelcomeMessage();
@@ -60,6 +64,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
         state = state.copyWith(messages: history);
       }
     } catch (e) {
+      print('=== LOAD HISTORY ERROR: $e ===');
       _addWelcomeMessage();
     }
   }
@@ -80,7 +85,6 @@ class ChatNotifier extends StateNotifier<ChatState> {
   Future<void> sendMessage(String messageText) async {
     if (messageText.trim().isEmpty) return;
 
-    // Thêm tin user vào list ngay lập tức
     final userMessage = ChatMessage(
       id: 'user_${DateTime.now().millisecondsSinceEpoch}',
       content: messageText.trim(),
@@ -95,7 +99,16 @@ class ChatNotifier extends StateNotifier<ChatState> {
     );
 
     try {
+      // Kiểm tra useCase null trước khi gọi
       final useCase = _ref.read(sendChatMessageUseCaseProvider);
+      if (useCase == null) {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: 'Hệ thống chưa sẵn sàng, thử lại sau giây lát.',
+        );
+        return;
+      }
+
       final aiResponse = await useCase.execute(
         message: messageText,
         context: _healthContext,
@@ -107,9 +120,11 @@ class ChatNotifier extends StateNotifier<ChatState> {
         isLoading: false,
       );
     } catch (e) {
+      print('=== SEND MESSAGE ERROR: $e ===');
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Không thể kết nối AI Coach. Vui lòng thử lại.',
+        // Hiện lỗi thật để debug
+        errorMessage: e.toString(),
       );
     }
   }
@@ -117,10 +132,12 @@ class ChatNotifier extends StateNotifier<ChatState> {
   Future<void> clearChat() async {
     try {
       final repository = _ref.read(aiCoachRepositoryProvider);
+      if (repository == null) return;
       await repository.clearChatHistory();
       state = const ChatState();
       _addWelcomeMessage();
     } catch (e) {
+      print('=== CLEAR CHAT ERROR: $e ===');
       state = state.copyWith(errorMessage: 'Không thể xóa lịch sử chat.');
     }
   }

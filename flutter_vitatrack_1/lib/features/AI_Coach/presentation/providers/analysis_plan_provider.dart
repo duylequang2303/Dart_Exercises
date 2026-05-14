@@ -5,7 +5,6 @@ import '../../domain/entities/user_health_context.dart';
 import 'ai_coach_dependencies_provider.dart';
 
 // ─── Health Context (mock) ────────────────────────────────────
-// TODO: Thay bằng provider thực từ health/activity feature
 
 final userHealthContextProvider = Provider<UserHealthContext>((ref) {
   return const UserHealthContext(
@@ -34,7 +33,18 @@ class HealthAnalysisNotifier extends AsyncNotifier<HealthAnalysis> {
   }
 
   Future<HealthAnalysis> _fetchAnalysis() async {
+    // Kiểm tra useCase null trước khi gọi
     final useCase = ref.read(getHealthAnalysisUseCaseProvider);
+    if (useCase == null) {
+      // Chờ 1 giây rồi thử lại (SharedPreferences chưa sẵn sàng)
+      await Future.delayed(const Duration(seconds: 1));
+      final retryUseCase = ref.read(getHealthAnalysisUseCaseProvider);
+      if (retryUseCase == null) {
+        throw Exception('Hệ thống chưa sẵn sàng, thử lại sau.');
+      }
+      final context = ref.read(userHealthContextProvider);
+      return retryUseCase.execute(context);
+    }
     final context = ref.read(userHealthContextProvider);
     return useCase.execute(context);
   }
@@ -83,14 +93,34 @@ class CoachPlanNotifier extends StateNotifier<CoachPlanState> {
   Future<void> fetchPlan() async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
+      // Kiểm tra useCase null
       final useCase = _ref.read(getCoachPlanUseCaseProvider);
+      if (useCase == null) {
+        // Chờ SharedPreferences sẵn sàng rồi thử lại
+        await Future.delayed(const Duration(seconds: 1));
+        final retryUseCase = _ref.read(getCoachPlanUseCaseProvider);
+        if (retryUseCase == null) {
+          state = state.copyWith(
+            isLoading: false,
+            errorMessage: 'Hệ thống chưa sẵn sàng, thử lại sau.',
+          );
+          return;
+        }
+        final context = _ref.read(userHealthContextProvider);
+        final plan = await retryUseCase.execute(context);
+        state = state.copyWith(plan: plan, isLoading: false);
+        return;
+      }
+
       final context = _ref.read(userHealthContextProvider);
       final plan = await useCase.execute(context);
       state = state.copyWith(plan: plan, isLoading: false);
     } catch (e) {
+      print('=== FETCH PLAN ERROR: $e ===');
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Không thể tải kế hoạch. Vui lòng thử lại.',
+        // Hiện lỗi thật để debug
+        errorMessage: e.toString(),
       );
     }
   }
@@ -99,7 +129,8 @@ class CoachPlanNotifier extends StateNotifier<CoachPlanState> {
     final currentPlan = state.plan;
     if (currentPlan == null) return;
 
-    final taskIndex = currentPlan.dailyTasks.indexWhere((t) => t.id == taskId);
+    final taskIndex =
+        currentPlan.dailyTasks.indexWhere((t) => t.id == taskId);
     if (taskIndex == -1) return;
 
     final currentTask = currentPlan.dailyTasks[taskIndex];
@@ -119,8 +150,10 @@ class CoachPlanNotifier extends StateNotifier<CoachPlanState> {
     // Lưu local, rollback nếu lỗi
     try {
       final useCase = _ref.read(updateTaskCompletionUseCaseProvider);
+      if (useCase == null) return;
       await useCase.execute(taskId: taskId, isCompleted: newIsCompleted);
     } catch (e) {
+      print('=== TOGGLE TASK ERROR: $e ===');
       state = state.copyWith(plan: currentPlan);
     }
   }
