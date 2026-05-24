@@ -193,3 +193,21 @@
 🔴 **Việc 1: Tích hợp Health Kit (iOS) & Google Fit (Android)**
 - Sử dụng thư viện `health` hoặc `pedometer` để lấy số bước chân, nhịp tim THẬT từ cảm biến điện thoại.
 - Thay thế toàn bộ số 8245 bước (fake) trong `HealthProvider` bằng dữ liệu thực tế này.
+
+---
+
+# 📅 Cập nhật ngày 24/05/2026 (Workout Status - Hoàng)
+
+## ✅ CÁC PHẦN ĐÃ HOÀN THÀNH
+- [x] Đã tạo `activity_entity.dart`, `activity_model.dart` và `workout_remote_datasource.dart`.
+- [x] Đã tạo `exercise_search_provider.dart` để phục vụ gọi API wger.
+- [x] Đã di chuyển giao diện màn hình sang `lib/features/workout/presentation/screens/workout_screen.dart` và `live_workout_screen.dart`.
+- [x] Đã xây dựng `WorkoutTimerService` và tích hợp `workoutElapsedProvider`, `workoutCountdownProvider` cho tính năng Live Tracking.
+
+## ❌ CÁC PHẦN CÒN THIẾU / CẦN KHẮC PHỤC (VI PHẠM CLOT.MD)
+- [ ] **Lỗi import `http`**: File `workout_remote_datasource.dart` vẫn dùng thư viện `http` (dự án không cài package này). Cần chuyển đổi sang `Dio` (Mục 11 Clot.md).
+- [ ] **Chưa tích hợp API vào UI**: Màn hình `workout_screen.dart` vẫn dùng danh sách bài tập cứng `_allExercises`. Cần kết nối `exerciseSearchProvider` để hiển thị dữ liệu thực tế từ API wger.
+- [ ] **Chưa đăng ký Riverpod**: `ExerciseSearchProvider` vẫn là `ChangeNotifier` thuần và chưa được đăng ký dưới dạng Riverpod Provider toàn cục (Mục 10 Clot.md).
+- [ ] **Vi phạm luồng dữ liệu (Data Flow)**: `ExerciseSearchProvider` đang gọi trực tiếp `remoteDataSource` bỏ qua UseCase và Repository (Mục 3 & 4 Clot.md).
+- [ ] **Chưa lưu lịch sử lên Firestore**: Khi hoàn thành bài tập, hệ thống vẫn chỉ lưu vào bộ nhớ tạm in-memory (`WorkoutLocalDataSource`), chưa thực hiện đẩy dữ liệu lên Firestore `users/{uid}/workouts/`.
+
