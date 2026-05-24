@@ -13,4 +13,4 @@ class ActivityEntity {
     required this.caloriesBurned,
     required this.date,
   });
-}
+} 
