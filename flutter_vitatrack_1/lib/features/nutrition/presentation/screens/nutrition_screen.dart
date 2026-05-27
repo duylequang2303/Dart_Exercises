@@ -3,7 +3,6 @@ import 'package:flutter_vitatrack_1/core/theme.dart';
 import 'today_tab.dart';
 import 'week_tab.dart';
 import 'nutrition_month_view.dart';
-// 1. IMPORT THÊM MÀN HÌNH THÊM MÓN ĂN
 import 'add_food_screen.dart'; 
 
 class NutritionScreen extends StatefulWidget {
@@ -20,17 +19,15 @@ class _NutritionScreenState extends State<NutritionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: VitaTrackTheme.mauNen,
-      // 2. THÊM NÚT BẤM (+) ĐỂ NHẬP LIỆU
       floatingActionButton: _tabHienTai == 0 ? FloatingActionButton(
         backgroundColor: VitaTrackTheme.mauChinh,
         child: const Icon(Icons.add, color: VitaTrackTheme.mauNen),
         onPressed: () {
-          // Mở màn hình thêm món ăn
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const AddFoodScreen()),
           ).then((_) {
-            // Khi quay lại màn hình này, gọi setState để "Ruột" TodayTab vẽ lại số mới
+            // Khi nạp món mới thành công quay về, làm mới UI để cập nhật biểu đồ
             setState(() {}); 
           });
         },
@@ -74,8 +71,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
 
   Widget _hienThiNoiDungTab() {
     switch (_tabHienTai) {
-      // 3. XÓA TỪ KHÓA 'const' Ở ĐÂY 
-      // Vì nội dung bên trong TodayTab giờ là dữ liệu thay đổi được
+      // ĐÃ XÓA TỪ KHÓA 'const' ở TodayTab() để tiếp nhận dữ liệu động thời gian thực
       case 0: return const TodayTab(); 
       case 1: return const WeekTab();
       case 2: return const NutritionMonthView();
