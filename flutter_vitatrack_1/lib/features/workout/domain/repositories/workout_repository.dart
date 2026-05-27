@@ -1,8 +1,12 @@
-import 'package:flutter_vitatrack_1/features/workout/domain/entities/workout_entity.dart';
+// lib/features/workout/domain/repositories/workout_repository.dart
+import '../entities/exercise_entity.dart';
+import '../entities/workout_entity.dart';
 
 abstract class WorkoutRepository {
+  Future<List<ExerciseEntity>> searchExercises(String query, String category);
+  Future<void> saveWorkoutHistory(String uid, WorkoutEntity workout);
+  
+  // Bổ sung các hàm để phục vụ cho các UseCase đang bị lỗi
   Future<void> startWorkout();
-  Future<void> stopWorkout(Duration elapsed);
-  Future<void> updateProgress(Duration elapsed);
-  Future<List<WorkoutEntity>> getHistory();
+  Future<void> updateProgress(double progress);
 }

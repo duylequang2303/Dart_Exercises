@@ -1,35 +1,40 @@
-import 'package:flutter_vitatrack_1/features/workout/data/datasources/workout_local_datasource.dart';
-import 'package:flutter_vitatrack_1/features/workout/domain/entities/workout_entity.dart';
-import 'package:flutter_vitatrack_1/features/workout/domain/repositories/workout_repository.dart';
+// lib/features/workout/data/repositories/workout_repository_impl.dart
+import '../../domain/entities/exercise_entity.dart';
+import '../../domain/entities/workout_entity.dart';
+import '../../domain/repositories/workout_repository.dart';
+import '../datasources/workout_remote_datasource.dart';
+import '../models/activity_model.dart';
 
 class WorkoutRepositoryImpl implements WorkoutRepository {
-  final WorkoutLocalDataSource localDataSource;
+  final WorkoutRemoteDatasource _remoteDatasource;
 
-  WorkoutRepositoryImpl({required this.localDataSource});
-
-  @override
-  Future<void> startWorkout() async {
-    await localDataSource.startWorkout();
-  }
+  WorkoutRepositoryImpl(this._remoteDatasource);
 
   @override
-  Future<void> stopWorkout(Duration elapsed) async {
-    final workout = WorkoutEntity(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: 'Workout',
-      duration: elapsed,
-      exercises: const [],
+  Future<List<ExerciseEntity>> searchExercises(String query, String category) async {
+    // SỬA TẠI ĐÂY: Gọi đúng tên hàm searchExercises với tham số đặt tên muscleId (truyền category vào)
+    return await _remoteDatasource.searchExercises(
+      query: query,
+      muscleId: category, 
     );
-    await localDataSource.saveWorkout(workout);
   }
 
   @override
-  Future<void> updateProgress(Duration elapsed) async {
-    await localDataSource.updateProgress(elapsed);
+  Future<void> saveWorkoutHistory(String uid, WorkoutEntity workout) async {
+    final model = WorkoutModel(
+      id: workout.id,
+      exerciseId: workout.exerciseId,
+      exerciseName: workout.exerciseName,
+      actualDurationInSeconds: workout.actualDurationInSeconds,
+      totalCaloriesBurned: workout.totalCaloriesBurned,
+      timestamp: workout.timestamp,
+    );
+    await _remoteDatasource.saveWorkoutToFirestore(uid, model);
   }
 
   @override
-  Future<List<WorkoutEntity>> getHistory() async {
-    return localDataSource.getAllWorkouts();
-  }
+  Future<void> startWorkout() async {}
+
+  @override
+  Future<void> updateProgress(double progress) async {}
 }

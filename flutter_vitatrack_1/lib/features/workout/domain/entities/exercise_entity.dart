@@ -1,33 +1,16 @@
-
-/// Domain entity representing a single Exercise.
+// lib/features/workout/domain/entities/exercise_entity.dart
 class ExerciseEntity {
   final String id;
   final String name;
-  final int sets;
-  final int reps;
-  final Duration duration; // expected duration for this exercise
+  final int durationInMinutes;
+  final int caloriesBurned;
+  final String category;
 
   const ExerciseEntity({
     required this.id,
     required this.name,
-    this.sets = 0,
-    this.reps = 0,
-    required this.duration,
+    required this.durationInMinutes,
+    required this.caloriesBurned,
+    required this.category,
   });
-
-  ExerciseEntity copyWith({
-    String? id,
-    String? name,
-    int? sets,
-    int? reps,
-    Duration? duration,
-  }) {
-    return ExerciseEntity(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      sets: sets ?? this.sets,
-      reps: reps ?? this.reps,
-      duration: duration ?? this.duration,
-    );
-  }
 }

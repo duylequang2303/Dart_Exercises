@@ -172,34 +172,58 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
     );
   }
 
-  void _showStartMenu() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        return Container(
-          padding: const EdgeInsets.all(24),
-          decoration: const BoxDecoration(color: VitaTrackTheme.mauCard, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: VitaTrackTheme.mauCardNhat, borderRadius: BorderRadius.circular(2)))),
-              const SizedBox(height: 24),
-              const Text('Chọn bài tập', style: TextStyle(color: VitaTrackTheme.mauChu, fontSize: 20, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
-              _buildStartChoice(sheetContext, Icons.directions_run, 'Chạy bộ ngoài trời', VitaTrackTheme.mauChinh),
-              _buildStartChoice(sheetContext, Icons.pedal_bike, 'Đạp xe', VitaTrackTheme.mauThanhCong),
-              _buildStartChoice(sheetContext, Icons.fitness_center, 'Tập kháng lực', VitaTrackTheme.mauNguyHiem),
-              const SizedBox(height: 16),
-            ],
-          ),
-        );
-      },
-    );
-  }
+  // lib/features/workout/presentation/screens/workout_screen.dart
 
-  Widget _buildStartChoice(BuildContext sheetContext, IconData icon, String title, Color color) {
+void _showStartMenu() {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: VitaTrackTheme.mauCard,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: VitaTrackTheme.mauChuPhu,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Chọn bài tập',
+              style: TextStyle(
+                color: VitaTrackTheme.mauChu,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // FIX TẠI ĐÂY: Truyền thêm chuỗi ID bài tập vào tham số vị trí thứ 2
+            _buildStartChoice(sheetContext, 'running_outdoor', Icons.directions_run, 'Chạy bộ ngoài trời', VitaTrackTheme.mauChinh),
+            _buildStartChoice(sheetContext, 'cycling_indoor', Icons.pedal_bike, 'Đạp xe', VitaTrackTheme.mauThanhCong),
+            _buildStartChoice(sheetContext, 'resistance_training', Icons.fitness_center, 'Tập kháng lực', VitaTrackTheme.mauNguyHiem),
+            
+            const SizedBox(height: 16),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+  Widget _buildStartChoice(BuildContext sheetContext, String id, IconData icon, String title, Color color) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: color.withValues(alpha: 0.15), shape: BoxShape.circle), child: Icon(icon, color: color)),
@@ -211,7 +235,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
         final result = await Navigator.push<bool>(
           context,
           PageRouteBuilder(
-            pageBuilder: (_, _, _) => LiveWorkoutScreen(tenBaiTap: title, iconBaiTap: icon),
+            pageBuilder: (_, _, _) => LiveWorkoutScreen( exId: id, exName: title),
             transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: animation, child: child),
           ),
         );

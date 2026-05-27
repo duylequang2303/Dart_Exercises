@@ -1,30 +1,18 @@
-import 'package:flutter_vitatrack_1/features/workout/domain/entities/exercise_entity.dart';
-
-/// Domain entity representing a Workout composed of Exercises.
+// lib/features/workout/domain/entities/workout_entity.dart
 class WorkoutEntity {
   final String id;
-  final String name;
-  final Duration duration;
-  final List<ExerciseEntity> exercises;
+  final String exerciseId;
+  final String exerciseName;
+  final int actualDurationInSeconds;
+  final int totalCaloriesBurned;
+  final DateTime timestamp;
 
   const WorkoutEntity({
     required this.id,
-    required this.name,
-    required this.duration,
-    required this.exercises,
+    required this.exerciseId,
+    required this.exerciseName,
+    required this.actualDurationInSeconds,
+    required this.totalCaloriesBurned,
+    required this.timestamp,
   });
-
-  WorkoutEntity copyWith({
-    String? id,
-    String? name,
-    Duration? duration,
-    List<ExerciseEntity>? exercises,
-  }) {
-    return WorkoutEntity(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      duration: duration ?? this.duration,
-      exercises: exercises ?? this.exercises,
-    );
-  }
 }

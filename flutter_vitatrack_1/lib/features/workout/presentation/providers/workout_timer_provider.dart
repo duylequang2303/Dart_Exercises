@@ -1,77 +1,47 @@
-import 'dart:async';
-
+// lib/features/workout/presentation/providers/workout_timer_provider.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_vitatrack_1/features/workout/presentation/services/workout_timer_service.dart';
-import 'package:flutter_vitatrack_1/features/workout/domain/usecases/start_workout.dart';
-import 'package:flutter_vitatrack_1/features/workout/domain/usecases/stop_workout.dart';
-import 'package:flutter_vitatrack_1/features/workout/domain/usecases/track_workout_progress.dart';
-import 'package:flutter_vitatrack_1/features/workout/domain/repositories/workout_repository.dart';
-import 'package:flutter_vitatrack_1/features/workout/data/datasources/workout_local_datasource.dart';
-import 'package:flutter_vitatrack_1/features/workout/data/repositories/workout_repository_impl.dart';
+import '../services/workout_timer_service.dart';
 
-final workoutLocalDataSourceProvider = Provider<WorkoutLocalDataSource>((ref) => WorkoutLocalDataSource());
+// 1. Định nghĩa kiểu dữ liệu trạng thái (Fix lỗi 'TimerStateData isn't a type')
+class TimerStateData {
+  final int seconds;
+  final bool isRunning;
+  const TimerStateData({this.seconds = 0, this.isRunning = false});
+}
 
-final workoutRepositoryProvider = Provider<WorkoutRepository>((ref) => WorkoutRepositoryImpl(localDataSource: ref.read(workoutLocalDataSourceProvider)));
+// 2. Triển khai lớp Notifier để điều khiển State (Fix lỗi 'WorkoutTimerNotifier isn't a type')
+class WorkoutTimerNotifier extends StateNotifier<TimerStateData> {
+  final WorkoutTimerService _timerService;
 
-final workoutTimerServiceProvider = Provider<WorkoutTimerService>((ref) {
-  final s = WorkoutTimerService();
-  ref.onDispose(() => s.dispose());
-  return s;
-});
+  WorkoutTimerNotifier(this._timerService) : super(const TimerStateData());
 
-final startWorkoutUseCaseProvider = Provider<StartWorkout>((ref) => StartWorkout(repository: ref.read(workoutRepositoryProvider)));
-
-final stopWorkoutUseCaseProvider = Provider<StopWorkout>((ref) => StopWorkout(repository: ref.read(workoutRepositoryProvider)));
-
-final trackWorkoutProgressUseCaseProvider = Provider<TrackWorkoutProgress>((ref) => TrackWorkoutProgress(repository: ref.read(workoutRepositoryProvider)));
-
-final workoutElapsedProvider = StateNotifierProvider<WorkoutTimerNotifier, Duration>((ref) {
-  final timer = ref.read(workoutTimerServiceProvider);
-  final startUc = ref.read(startWorkoutUseCaseProvider);
-  final stopUc = ref.read(stopWorkoutUseCaseProvider);
-  final trackUc = ref.read(trackWorkoutProgressUseCaseProvider);
-  return WorkoutTimerNotifier(timer, startUc, stopUc, trackUc);
-});
-
-final workoutCountdownProvider = StreamProvider<int?>((ref) {
-  final s = ref.watch(workoutTimerServiceProvider);
-  return s.countdownStream;
-});
-
-class WorkoutTimerNotifier extends StateNotifier<Duration> {
-  final WorkoutTimerService _service;
-  final StartWorkout _start;
-  final StopWorkout _stop;
-  final TrackWorkoutProgress _track;
-  StreamSubscription<Duration>? _sub;
-
-  WorkoutTimerNotifier(this._service, this._start, this._stop, this._track) : super(Duration.zero) {
-    _sub = _service.elapsedStream.listen((d) {
-      state = d;
-      // fire-and-forget tracking
-      _track.execute(d);
+  void startTracking() {
+    state = TimerStateData(seconds: state.seconds, isRunning: true);
+    _timerService.start((currentSeconds) {
+      state = TimerStateData(seconds: currentSeconds, isRunning: true);
     });
   }
 
-  Future<void> start() async {
-    await _start.execute();
-    _service.start();
+  void forceSyncFromBackground() {
+    if (state.isRunning) {
+      state = TimerStateData(seconds: _timerService.getActualSeconds(), isRunning: true);
+    }
   }
 
-  Future<void> stop() async {
-    _service.stop();
-    await _stop.execute(state);
+  void pauseTracking() {
+    final pausedSeconds = _timerService.pause();
+    state = TimerStateData(seconds: pausedSeconds, isRunning: false);
   }
 
-  void reset() => _service.reset();
-
-  void startCountdown(int seconds) => _service.startCountdown(seconds);
-
-  void stopCountdown() => _service.stopCountdown();
-
-  @override
-  void dispose() {
-    _sub?.cancel();
-    super.dispose();
+  void resetTracking() {
+    _timerService.reset();
+    state = const TimerStateData(seconds: 0, isRunning: false);
   }
 }
+
+// 3. Khai báo các biến Global Provider ở cấp độ file theo đúng kiến trúc của bạn
+final timerServiceProvider = Provider((ref) => WorkoutTimerService());
+
+final workoutTimerProvider = StateNotifierProvider<WorkoutTimerNotifier, TimerStateData>((ref) {
+  return WorkoutTimerNotifier(ref.watch(timerServiceProvider));
+});
