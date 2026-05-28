@@ -211,3 +211,14 @@
 
 🟡 **Việc 5: AI Camera thực tế (Gemini Vision)**
 - Thay thế phần giả lập "Cơm Tấm Sườn" bằng việc nhận diện ảnh thật.
+
+---
+
+# 📅 Cập nhật ngày 28/05/2026 (Nutrition Status - Tuấn)
+
+## ✅ CÁC TÁC VỤ ĐÃ HOÀN THÀNH VÀ TINH CHỈNH
+- [x] **Tính năng tìm kiếm (Việc 1)**: Đã tích hợp hoàn tất API Open Food Facts (`food_api_datasource.dart`, `food_entity.dart`, `food_search_provider.dart`).
+- [x] **Dashboard & Charts (Việc 2)**: Đã xóa toàn bộ dữ liệu ảo (`MockDataService`). UI biểu đồ và Progress Bar hiện đang render từ dữ liệu thực tế lưu trên Firebase.
+- [x] **Nâng cấp UX/Hiệu năng (Fix bổ sung)**: Đã refactor `food_search_provider.dart` sang chuẩn `AsyncValue` để xử lý mượt mà trạng thái Loading/Error khi gõ tìm kiếm. Thêm cơ chế **Debounce (500ms)** giúp chống spam API Open Food Facts.
+
+🎉 **Kết luận:** Các tính năng cốt lõi do Tuấn đảm nhiệm đã code rất sạch, chuẩn Clot.md, hoàn toàn không có lỗi linter. Đã push toàn bộ lên nhánh `nutrition-v3`. Sẵn sàng cho các task tiếp theo!
