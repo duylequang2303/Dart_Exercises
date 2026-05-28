@@ -5,7 +5,7 @@ class StopWorkout {
 
   StopWorkout({required this.repository});
 
-  Future<void> execute(Duration elapsed) async {
-    await repository.stopWorkout(elapsed);
+  Future<void> execute(String uid, Duration elapsed) async {
+    await repository.stopWorkout(uid, elapsed);
   }
 }

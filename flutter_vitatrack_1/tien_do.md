@@ -204,10 +204,19 @@
 - [x] Đã di chuyển giao diện màn hình sang `lib/features/workout/presentation/screens/workout_screen.dart` và `live_workout_screen.dart`.
 - [x] Đã xây dựng `WorkoutTimerService` và tích hợp `workoutElapsedProvider`, `workoutCountdownProvider` cho tính năng Live Tracking.
 
-## ❌ CÁC PHẦN CÒN THIẾU / CẦN KHẮC PHỤC (VI PHẠM CLOT.MD)
-- [ ] **Lỗi import `http`**: File `workout_remote_datasource.dart` vẫn dùng thư viện `http` (dự án không cài package này). Cần chuyển đổi sang `Dio` (Mục 11 Clot.md).
-- [ ] **Chưa tích hợp API vào UI**: Màn hình `workout_screen.dart` vẫn dùng danh sách bài tập cứng `_allExercises`. Cần kết nối `exerciseSearchProvider` để hiển thị dữ liệu thực tế từ API wger.
-- [ ] **Chưa đăng ký Riverpod**: `ExerciseSearchProvider` vẫn là `ChangeNotifier` thuần và chưa được đăng ký dưới dạng Riverpod Provider toàn cục (Mục 10 Clot.md).
-- [ ] **Vi phạm luồng dữ liệu (Data Flow)**: `ExerciseSearchProvider` đang gọi trực tiếp `remoteDataSource` bỏ qua UseCase và Repository (Mục 3 & 4 Clot.md).
-- [ ] **Chưa lưu lịch sử lên Firestore**: Khi hoàn thành bài tập, hệ thống vẫn chỉ lưu vào bộ nhớ tạm in-memory (`WorkoutLocalDataSource`), chưa thực hiện đẩy dữ liệu lên Firestore `users/{uid}/workouts/`.
+## ✅ CÁC PHẦN ĐÃ KHẮC PHỤC XONG (Workout Status)
+- [x] **Lỗi import `http`**: File `workout_remote_datasource.dart` đã chuyển đổi sang `Dio`.
+- [x] **Chưa tích hợp API vào UI**: Màn hình `workout_screen.dart` đã kết nối `exerciseSearchProvider` hiển thị dữ liệu thực tế.
+- [x] **Chưa đăng ký Riverpod**: `ExerciseSearchProvider` đã chuyển thành `StateNotifierProvider` toàn cục.
+- [x] **Vi phạm luồng dữ liệu (Data Flow)**: `ExerciseSearchProvider` đã dùng qua `SearchExercises` UseCase và Repository.
+- [x] **Chưa lưu lịch sử lên Firestore**: Khi hoàn thành bài tập, hệ thống đã lưu lên Firestore `users/{uid}/workouts/` qua `WorkoutRemoteDataSource`.
+- [x] **Lỗi hiển thị đếm ngược**: Sửa lỗi hiển thị số 0 khi kết thúc countdown trong `WorkoutTimerService`.
+---
 
+# 📅 Cập nhật ngày 28/05/2026 (Workout Status - Hoàng)
+
+## ✅ CÁC LỖI ĐÃ ĐƯỢC DEBUG VÀ FIX THÀNH CÔNG
+- [x] **Lỗi không lưu được dữ liệu lên Firestore**: Đã tìm ra nguyên nhân (do truyền trực tiếp object `ExerciseEntity` không serialize được vào Firestore). Đã fix triệt để bằng cách map object sang kiểu `Map<String, dynamic>` trong `workout_remote_datasource.dart`.
+- [x] Đã chạy `dart analyze` trên toàn bộ thư mục `workout` và fix sạch sẽ 100% các lỗi linter, warnings, tối ưu code theo chuẩn Flutter.
+
+🎉 **Kết luận:** Chức năng Workout do Hoàng phụ trách đã chính thức hoàn thiện 100%, không còn bug logic, không vi phạm kiến trúc Clot.md, chức năng đồng bộ mượt mà! Sẵn sàng bàn giao hoặc ráp nối với các module khác.

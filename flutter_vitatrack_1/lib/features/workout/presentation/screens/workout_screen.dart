@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_vitatrack_1/core/theme.dart';
 import 'package:flutter_vitatrack_1/features/workout/presentation/screens/live_workout_screen.dart';
+import 'package:flutter_vitatrack_1/features/workout/presentation/providers/exercise_search_provider.dart';
+import 'package:flutter_vitatrack_1/features/workout/domain/entities/activity_entity.dart';
 
 class WorkoutScreen extends ConsumerStatefulWidget {
   const WorkoutScreen({super.key});
@@ -15,78 +17,21 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
   int _tabIndex = 0;
   bool _pressed = false;
 
-  // Dữ liệu mẫu cho bài tập gợi ý (giữ nguyên)
-  static const List<Map<String, dynamic>> _suggested = [
-    {"name": "Morning Run", "duration": "32 min", "cal": 320, "icon": Icons.directions_run, "color": Color(0xFF1B2E28)},
-    {"name": "Evening Ride", "duration": "45 min", "cal": 280, "icon": Icons.pedal_bike, "color": Color(0xFF1A2136)},
-    {"name": "Pool Laps", "duration": "30 min", "cal": 400, "icon": Icons.pool, "color": Color(0xFF2E241B)},
-  ];
-
   // Dữ liệu mẫu cho hoạt động gần đây (giữ nguyên)
   static const List<Map<String, dynamic>> _recent = [
     {"name": "Run", "time": "07:30", "duration": "32 min", "cal": 320, "hr": 145, "icon": Icons.directions_run},
     {"name": "Walk", "time": "12:15", "duration": "15 min", "cal": 85, "hr": 95, "icon": Icons.directions_walk},
   ];
 
-  // --- DỮ LIỆU MỞ RỘNG CHO TÌM KIẾM & LỌC NHÓM CƠ ---
-  final List<Map<String, dynamic>> _allExercises = [
-    // Ngực
-    {"name": "Bench Press", "duration": "15 min", "cal": 120, "muscle": "Ngực", "icon": Icons.fitness_center, "color": Colors.blue.shade800},
-    {"name": "Push-up", "duration": "10 min", "cal": 80, "muscle": "Ngực", "icon": Icons.fitness_center, "color": Colors.blue.shade800},
-    {"name": "Incline Press", "duration": "12 min", "cal": 110, "muscle": "Ngực", "icon": Icons.fitness_center, "color": Colors.blue.shade800},
-    // Lưng
-    {"name": "Pull-up", "duration": "12 min", "cal": 100, "muscle": "Lưng", "icon": Icons.fitness_center, "color": Colors.green.shade800},
-    {"name": "Bent Over Row", "duration": "15 min", "cal": 115, "muscle": "Lưng", "icon": Icons.fitness_center, "color": Colors.green.shade800},
-    {"name": "Lat Pulldown", "duration": "12 min", "cal": 105, "muscle": "Lưng", "icon": Icons.fitness_center, "color": Colors.green.shade800},
-    // Chân
-    {"name": "Squat", "duration": "15 min", "cal": 130, "muscle": "Chân", "icon": Icons.fitness_center, "color": Colors.orange.shade800},
-    {"name": "Lunges", "duration": "12 min", "cal": 110, "muscle": "Chân", "icon": Icons.fitness_center, "color": Colors.orange.shade800},
-    {"name": "Leg Press", "duration": "15 min", "cal": 125, "muscle": "Chân", "icon": Icons.fitness_center, "color": Colors.orange.shade800},
-    // Vai
-    {"name": "Shoulder Press", "duration": "12 min", "cal": 105, "muscle": "Vai", "icon": Icons.fitness_center, "color": Colors.purple.shade800},
-    {"name": "Lateral Raise", "duration": "10 min", "cal": 85, "muscle": "Vai", "icon": Icons.fitness_center, "color": Colors.purple.shade800},
-    {"name": "Front Raise", "duration": "10 min", "cal": 80, "muscle": "Vai", "icon": Icons.fitness_center, "color": Colors.purple.shade800},
-    // Tay
-    {"name": "Bicep Curl", "duration": "12 min", "cal": 90, "muscle": "Tay", "icon": Icons.fitness_center, "color": Colors.teal.shade800},
-    {"name": "Triceps Extension", "duration": "12 min", "cal": 88, "muscle": "Tay", "icon": Icons.fitness_center, "color": Colors.teal.shade800},
-    {"name": "Hammer Curl", "duration": "10 min", "cal": 85, "muscle": "Tay", "icon": Icons.fitness_center, "color": Colors.teal.shade800},
-    // Bụng
-    {"name": "Plank", "duration": "8 min", "cal": 60, "muscle": "Bụng", "icon": Icons.fitness_center, "color": Colors.amber.shade800},
-    {"name": "Russian Twist", "duration": "10 min", "cal": 75, "muscle": "Bụng", "icon": Icons.fitness_center, "color": Colors.amber.shade800},
-    {"name": "Leg Raise", "duration": "10 min", "cal": 70, "muscle": "Bụng", "icon": Icons.fitness_center, "color": Colors.amber.shade800},
-    // Cardio (thêm nhóm Cardio)
-    {"name": "Jumping Jacks", "duration": "8 min", "cal": 95, "muscle": "Cardio", "icon": Icons.directions_run, "color": Colors.red.shade800},
-    {"name": "Burpees", "duration": "10 min", "cal": 120, "muscle": "Cardio", "icon": Icons.directions_run, "color": Colors.red.shade800},
+  final List<Map<String, dynamic>> _muscleGroups = [
+    {"name": "Tất cả", "id": null},
+    {"name": "Biceps", "id": 1},
+    {"name": "Deltoids", "id": 2},
+    {"name": "Abs", "id": 3},
+    {"name": "Chest", "id": 4},
+    {"name": "Triceps", "id": 5},
+    {"name": "Back", "id": 6},
   ];
-
-  final List<String> _muscleGroups = [
-    "Tất cả",
-    "Ngực",
-    "Lưng",
-    "Chân",
-    "Vai",
-    "Tay",
-    "Bụng",
-    "Cardio"
-  ];
-
-  String _searchQuery = "";
-  String _selectedMuscleGroup = "Tất cả";
-
-  List<Map<String, dynamic>> get _filteredExercises {
-    return _allExercises.where((ex) {
-      // Lọc theo nhóm cơ
-      if (_selectedMuscleGroup != "Tất cả" && ex["muscle"] != _selectedMuscleGroup) {
-        return false;
-      }
-      // Lọc theo từ khóa tìm kiếm
-      if (_searchQuery.isNotEmpty &&
-          !ex["name"].toLowerCase().contains(_searchQuery.toLowerCase())) {
-        return false;
-      }
-      return true;
-    }).toList();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -279,16 +224,23 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
 
   // ----- Tab Bài tập (ĐÃ THÊM TÌM KIẾM VÀ LỌC) -----
   Widget _buildExercises({Key? key}) {
+    final searchState = ref.watch(exerciseSearchProvider);
+    final searchNotifier = ref.read(exerciseSearchProvider.notifier);
+
     return Column(
       key: key,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // 1. Ô tìm kiếm
         TextField(
+          controller: TextEditingController.fromValue(
+            TextEditingValue(
+              text: searchState.currentQuery,
+              selection: TextSelection.collapsed(offset: searchState.currentQuery.length),
+            ),
+          ),
           onChanged: (value) {
-            setState(() {
-              _searchQuery = value;
-            });
+            searchNotifier.updateQuery(value);
           },
           decoration: InputDecoration(
             hintText: 'Tìm kiếm bài tập...',
@@ -310,18 +262,15 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: _muscleGroups.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            separatorBuilder: (context, index) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               final group = _muscleGroups[index];
-              final isSelected = _selectedMuscleGroup == group;
+              final isSelected = searchState.selectedMuscleId == group['id'];
               return FilterChip(
-                label: Text(group),
+                label: Text(group['name']),
                 selected: isSelected,
                 onSelected: (_) {
-                  setState(() {
-                    _selectedMuscleGroup = group;
-                    // Không reset search query để có thể lọc thêm
-                  });
+                  searchNotifier.updateMuscleFilter(group['id']);
                 },
                 backgroundColor: VitaTrackTheme.mauCard,
                 selectedColor: VitaTrackTheme.mauChinh.withValues(alpha: 0.2),
@@ -340,37 +289,45 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              _searchQuery.isEmpty && _selectedMuscleGroup == "Tất cả"
+              searchState.currentQuery.isEmpty && searchState.selectedMuscleId == null
                   ? "Bài tập gợi ý"
-                  : "Kết quả tìm kiếm (${_filteredExercises.length})",
+                  : "Kết quả (${searchState.exercises.length})",
               style: const TextStyle(color: VitaTrackTheme.mauChu, fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            if (_searchQuery.isNotEmpty || _selectedMuscleGroup != "Tất cả")
+            if (searchState.currentQuery.isNotEmpty || searchState.selectedMuscleId != null)
               TextButton(
                 onPressed: () {
-                  setState(() {
-                    _searchQuery = "";
-                    _selectedMuscleGroup = "Tất cả";
-                  });
+                  searchNotifier.clearFilters();
                 },
                 child: const Text('Xóa bộ lọc', style: TextStyle(color: VitaTrackTheme.mauChinh)),
               ),
           ],
         ),
         const SizedBox(height: 16),
-        if (_filteredExercises.isEmpty)
+        if (searchState.isLoading)
+          const Center(child: Padding(
+            padding: EdgeInsets.all(40.0),
+            child: CircularProgressIndicator(),
+          ))
+        else if (searchState.errorMessage != null)
           Container(
             padding: const EdgeInsets.symmetric(vertical: 40),
             alignment: Alignment.center,
-            child: Text('Không tìm thấy bài tập nào', style: TextStyle(color: VitaTrackTheme.mauChuPhu)),
+            child: Text(searchState.errorMessage!, style: const TextStyle(color: VitaTrackTheme.mauChuPhu)),
+          )
+        else if (searchState.exercises.isEmpty)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 40),
+            alignment: Alignment.center,
+            child: const Text('Không tìm thấy bài tập nào', style: TextStyle(color: VitaTrackTheme.mauChuPhu)),
           )
         else
           ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: _filteredExercises.length,
+            itemCount: searchState.exercises.length,
             itemBuilder: (context, index) {
-              final ex = _filteredExercises[index];
+              final ex = searchState.exercises[index];
               return _buildExerciseCard(ex);
             },
           ),
@@ -384,7 +341,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
   }
 
   // Card hiển thị một bài tập trong danh sách kết quả
-  Widget _buildExerciseCard(Map<String, dynamic> item) {
+  Widget _buildExerciseCard(ActivityEntity item) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -397,23 +354,23 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: item["color"]?.withValues(alpha: 0.2) ?? VitaTrackTheme.mauChinh.withValues(alpha: 0.2),
+              color: VitaTrackTheme.mauChinh.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(item["icon"] ?? Icons.fitness_center, color: item["color"] ?? VitaTrackTheme.mauChinh, size: 28),
+            child: const Icon(Icons.fitness_center, color: VitaTrackTheme.mauChinh, size: 28),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item["name"], style: const TextStyle(color: VitaTrackTheme.mauChu, fontSize: 16, fontWeight: FontWeight.w600)),
+                Text(item.title, style: const TextStyle(color: VitaTrackTheme.mauChu, fontSize: 16, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    _smallInfo(Icons.timer_outlined, item["duration"]),
+                    _smallInfo(Icons.timer_outlined, "${item.durationMinutes} min"),
                     const SizedBox(width: 12),
-                    _smallInfo(Icons.local_fire_department_outlined, "${item["cal"]} kcal"),
+                    _smallInfo(Icons.local_fire_department_outlined, "${item.caloriesBurned} kcal"),
                   ],
                 ),
               ],
@@ -425,9 +382,9 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
               color: VitaTrackTheme.mauChinh.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Text(
-              item["muscle"],
-              style: const TextStyle(fontSize: 12, color: VitaTrackTheme.mauChinh, fontWeight: FontWeight.w500),
+            child: const Text(
+              "Workout",
+              style: TextStyle(fontSize: 12, color: VitaTrackTheme.mauChinh, fontWeight: FontWeight.w500),
             ),
           ),
         ],

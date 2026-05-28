@@ -53,10 +53,9 @@ class WorkoutTimerService {
         return;
       }
       _countdownRemaining = _countdownRemaining! - 1;
-      if (_countdownRemaining! >= 0) {
+      if (_countdownRemaining! > 0) {
         _countdownController.add(_countdownRemaining);
-      }
-      if (_countdownRemaining! <= 0) {
+      } else {
         // End countdown
         t.cancel();
         _countdownRemaining = null;

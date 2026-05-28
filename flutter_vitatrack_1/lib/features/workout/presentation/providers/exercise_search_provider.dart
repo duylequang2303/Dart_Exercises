@@ -1,26 +1,30 @@
-// lib/features/workout/presentation/providers/exercise_search_provider.dart
 import 'dart:async';
-import 'package:flutter/material.dart';
-import '../../data/datasources/workout_remote_datasource.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../domain/usecases/search_exercises.dart';
 import '../../domain/entities/activity_entity.dart';
+import 'workout_timer_provider.dart';
 
-class ExerciseSearchProvider extends ChangeNotifier {
-  final WorkoutRemoteDataSource remoteDataSource;
+class ExerciseSearchState {
+  final List<ActivityEntity> exercises;
+  final bool isLoading;
+  final String currentQuery;
+  final int? selectedMuscleId;
+  final String? errorMessage;
 
-  List<ActivityEntity> _exercises = [];
-  bool _isLoading = false;
-  String _currentQuery = '';
-  int? _selectedMuscleId;
-  String? _errorMessage;
+  ExerciseSearchState({
+    this.exercises = const [],
+    this.isLoading = false,
+    this.currentQuery = '',
+    this.selectedMuscleId,
+    this.errorMessage,
+  });
+}
 
-  List<ActivityEntity> get exercises => _exercises;
-  bool get isLoading => _isLoading;
-  int? get selectedMuscleId => _selectedMuscleId;
-  String? get errorMessage => _errorMessage;
-
+class ExerciseSearchNotifier extends StateNotifier<ExerciseSearchState> {
+  final SearchExercises _searchExercises;
   Timer? _debounceTimer;
 
-  ExerciseSearchProvider({required this.remoteDataSource}) {
+  ExerciseSearchNotifier(this._searchExercises) : super(ExerciseSearchState()) {
     fetchExercises();
   }
 
@@ -31,33 +35,53 @@ class ExerciseSearchProvider extends ChangeNotifier {
   }
 
   Future<void> fetchExercises() async {
-    if (_isLoading) return; // tránh gọi chồng
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
+    if (state.isLoading) return;
+    state = ExerciseSearchState(
+      exercises: state.exercises,
+      isLoading: true,
+      currentQuery: state.currentQuery,
+      selectedMuscleId: state.selectedMuscleId,
+      errorMessage: null,
+    );
 
     try {
-      final result = await remoteDataSource.searchExercises(
-        query: _currentQuery,
-        muscleId: _selectedMuscleId,
+      final result = await _searchExercises.execute(
+        query: state.currentQuery,
+        muscleId: state.selectedMuscleId,
       );
-      _exercises = result;
-      if (_exercises.isEmpty && _currentQuery.isEmpty && _selectedMuscleId == null) {
-        _errorMessage = 'Không có bài tập nào. Hãy thử lại sau.';
+      
+      String? newError;
+      if (result.isEmpty && state.currentQuery.isEmpty && state.selectedMuscleId == null) {
+        newError = 'Không có bài tập nào. Hãy thử lại sau.';
       }
+      
+      state = ExerciseSearchState(
+        exercises: result,
+        isLoading: false,
+        currentQuery: state.currentQuery,
+        selectedMuscleId: state.selectedMuscleId,
+        errorMessage: newError,
+      );
     } catch (e) {
-      _errorMessage = e.toString();
-      _exercises = [];
-      debugPrint('Lỗi fetchExercises: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+      state = ExerciseSearchState(
+        exercises: const [],
+        isLoading: false,
+        currentQuery: state.currentQuery,
+        selectedMuscleId: state.selectedMuscleId,
+        errorMessage: e.toString(),
+      );
     }
   }
 
   void updateQuery(String query) {
-    if (_currentQuery == query) return;
-    _currentQuery = query;
+    if (state.currentQuery == query) return;
+    state = ExerciseSearchState(
+      exercises: state.exercises,
+      isLoading: state.isLoading,
+      currentQuery: query,
+      selectedMuscleId: state.selectedMuscleId,
+      errorMessage: state.errorMessage,
+    );
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 500), () {
       fetchExercises();
@@ -65,21 +89,33 @@ class ExerciseSearchProvider extends ChangeNotifier {
   }
 
   void updateMuscleFilter(int? muscleId) {
-    if (_selectedMuscleId == muscleId) return;
-    _selectedMuscleId = muscleId;
+    if (state.selectedMuscleId == muscleId) return;
+    state = ExerciseSearchState(
+      exercises: state.exercises,
+      isLoading: state.isLoading,
+      currentQuery: state.currentQuery,
+      selectedMuscleId: muscleId,
+      errorMessage: state.errorMessage,
+    );
     _debounceTimer?.cancel();
     fetchExercises();
   }
 
   void clearFilters() {
-    if (_currentQuery.isEmpty && _selectedMuscleId == null) return;
-    _currentQuery = '';
-    _selectedMuscleId = null;
+    if (state.currentQuery.isEmpty && state.selectedMuscleId == null) return;
+    state = ExerciseSearchState(
+      exercises: state.exercises,
+      isLoading: state.isLoading,
+      currentQuery: '',
+      selectedMuscleId: null,
+      errorMessage: state.errorMessage,
+    );
     _debounceTimer?.cancel();
     fetchExercises();
   }
-
-  Future<void> refresh() async {
-    await fetchExercises();
-  }
 }
+
+final exerciseSearchProvider = StateNotifierProvider<ExerciseSearchNotifier, ExerciseSearchState>((ref) {
+  final usecase = ref.watch(searchExercisesUseCaseProvider);
+  return ExerciseSearchNotifier(usecase);
+});

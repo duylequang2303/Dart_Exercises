@@ -1,11 +1,37 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
+import 'package:flutter_vitatrack_1/core/services/firestore_service.dart';
+import 'package:flutter/foundation.dart';
 import '../../domain/entities/activity_entity.dart';
+import '../../domain/entities/workout_entity.dart';
 
 class WorkoutRemoteDataSource {
-  final http.Client client;
+  final Dio dio;
+  final FirestoreService firestore;
 
-  WorkoutRemoteDataSource({required this.client});
+  WorkoutRemoteDataSource({
+    required this.dio,
+    required this.firestore,
+  });
+
+  Future<void> saveWorkout(String uid, WorkoutEntity workout) async {
+    await firestore.setDocument(
+      'users/$uid/workouts',
+      workout.id,
+      {
+        'id': workout.id,
+        'name': workout.name,
+        'durationMinutes': workout.duration.inMinutes,
+        'date': DateTime.now().toIso8601String(),
+        'exercises': workout.exercises.map((e) => {
+          'id': e.id,
+          'name': e.name,
+          'sets': e.sets,
+          'reps': e.reps,
+          'durationSeconds': e.duration.inSeconds,
+        }).toList(),
+      },
+    );
+  }
 
   /// Tìm kiếm bài tập theo từ khóa và/hoặc nhóm cơ (muscleId)
   /// Trả về danh sách ActivityEntity
@@ -14,26 +40,25 @@ class WorkoutRemoteDataSource {
     int? muscleId,
   }) async {
     try {
-      final Uri uri = Uri.https(
-        'wger.de',
-        '/api/v2/exercise/',
-        {
+      final response = await dio.get(
+        'https://wger.de/api/v2/exercise/',
+        queryParameters: {
           'format': 'json',
           'language': '2',
           if (query.isNotEmpty) 'term': query,
           if (muscleId != null) 'muscles': muscleId.toString(),
           'limit': '50',
         },
+        options: Options(
+          sendTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 10),
+        ),
       );
 
-      final response = await client.get(uri).timeout(const Duration(seconds: 10));
-
       if (response.statusCode == 200) {
-        final String responseBody = utf8.decode(response.bodyBytes);
-        if (responseBody.isEmpty) {
-          return [];
-        }
-        final Map<String, dynamic> data = json.decode(responseBody);
+        final data = response.data;
+        if (data == null) return [];
+        
         final List<dynamic> results = data['results'] ?? [];
 
         return results.map((jsonItem) {
@@ -50,17 +75,18 @@ class WorkoutRemoteDataSource {
         }).toList();
       } else {
         throw HttpException(
-          'Lỗi HTTP ${response.statusCode}: ${response.reasonPhrase ?? 'Không rõ lý do'}',
+          'Lỗi HTTP ${response.statusCode}: ${response.statusMessage ?? 'Không rõ lý do'}',
           statusCode: response.statusCode,
         );
       }
-    } on http.ClientException catch (e) {
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionTimeout || e.type == DioExceptionType.receiveTimeout) {
+        throw NetworkException('Lỗi kết nối mạng: Timeout');
+      }
       throw NetworkException('Lỗi kết nối mạng: ${e.message}');
-    } on FormatException catch (e) {
-      throw DataParsingException('Dữ liệu trả về không đúng định dạng JSON: $e');
     } catch (e) {
       // Ghi log để debug
-      print('Lỗi không xác định trong WorkoutRemoteDataSource: $e');
+      debugPrint('Lỗi không xác định trong WorkoutRemoteDataSource: $e');
       throw Exception('Lỗi không xác định: $e');
     }
   }
