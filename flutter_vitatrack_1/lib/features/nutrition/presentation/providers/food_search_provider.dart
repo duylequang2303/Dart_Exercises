@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/food_entity.dart';
@@ -11,24 +12,41 @@ final foodApiDataSourceProvider = Provider<FoodApiDataSource>((ref) {
   return FoodApiDataSource(ref.watch(dioProvider));
 });
 
-// Provider quản lý danh sách kết quả tìm kiếm
-final foodSearchProvider = StateNotifierProvider<FoodSearchNotifier, List<FoodEntity>>((ref) {
+// Provider quản lý danh sách kết quả tìm kiếm với AsyncValue để có loading/error
+final foodSearchProvider = StateNotifierProvider<FoodSearchNotifier, AsyncValue<List<FoodEntity>>>((ref) {
   return FoodSearchNotifier(ref.watch(foodApiDataSourceProvider));
 });
 
-class FoodSearchNotifier extends StateNotifier<List<FoodEntity>> {
+class FoodSearchNotifier extends StateNotifier<AsyncValue<List<FoodEntity>>> {
   final FoodApiDataSource _dataSource;
-  FoodSearchNotifier(this._dataSource) : super([]);
+  Timer? _debounce;
 
-  bool isLoading = false;
+  FoodSearchNotifier(this._dataSource) : super(const AsyncValue.data([]));
 
-  Future<void> timKiem(String query) async {
-    if (query.isEmpty) {
-      state = [];
-      return;
-    }
-    isLoading = true;
-    state = await _dataSource.searchFood(query);
-    isLoading = false;
+  void timKiem(String query) {
+    // Hủy timer cũ nếu có (Debounce)
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    
+    // Đợi 500ms sau khi người dùng ngừng gõ mới gọi API
+    _debounce = Timer(const Duration(milliseconds: 500), () async {
+      if (query.isEmpty) {
+        state = const AsyncValue.data([]);
+        return;
+      }
+      
+      state = const AsyncValue.loading();
+      try {
+        final result = await _dataSource.searchFood(query);
+        state = AsyncValue.data(result);
+      } catch (e, st) {
+        state = AsyncValue.error(e, st);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
   }
 }
