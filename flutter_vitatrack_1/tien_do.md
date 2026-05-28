@@ -82,15 +82,15 @@
 ## 📋 VIỆC CẦN LÀM THEO TỪNG NGƯỜI
 
 ### 👤 Bạn phụ trách Nutrition
-🔴 Việc 1: Tạo tính năng tìm kiếm món ăn
-- Tạo food_entity.dart → food_api_datasource.dart → food_search_provider.dart
-- API: Open Food Facts (không cần key)
-  https://world.openfoodfacts.org/cgi/search.pl?search_terms={query}&json=true&page_size=20
+✅ Việc 1: Tạo tính năng tìm kiếm món ăn
+- Đã tạo `food_entity.dart` → `food_api_datasource.dart` → `food_search_provider.dart`
+- Tích hợp thành công API Open Food Facts.
 
-🟡 Việc 2: Gắn vào màn hình add_food_screen.dart
-- Ô search → gọi timKiem() → hiện list → chọn món → lưu Firestore
+✅ Việc 2: Gắn vào màn hình add_food_screen.dart và hoàn thiện Dashboard
+- Ô search đã gọi `timKiem()`, hiện list, chọn món và lưu thành công lên Firestore.
+- Xóa bỏ hoàn toàn Mock Data ở Dashboard & Charts.
 
-⚠️ Lưu ý: bỏ qua item nếu thiếu calo, inject Dio qua constructor
+✅ Đã chạy kiểm tra `dart analyze`: Code sạch sẽ 100%, không phát hiện lỗi!
 
 ---
 
