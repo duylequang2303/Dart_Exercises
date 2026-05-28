@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/theme.dart';
+import 'package:flutter_vitatrack_1/core/theme.dart';
 import 'profile_tab.dart';
 import 'achievement_tab.dart';
 import 'settings_tab.dart';

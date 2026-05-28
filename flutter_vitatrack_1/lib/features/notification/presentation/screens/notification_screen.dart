@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../core/theme.dart';
+import 'package:flutter_vitatrack_1/core/theme.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});

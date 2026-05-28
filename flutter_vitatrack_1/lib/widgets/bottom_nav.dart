@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_vitatrack_1/core/theme.dart';
-import 'package:flutter_vitatrack_1/screens/home/home_screen.dart';
+import 'package:flutter_vitatrack_1/features/home/presentation/screens/home_screen.dart';
 import 'package:flutter_vitatrack_1/features/nutrition/presentation/screens/nutrition_screen.dart';
 import 'package:flutter_vitatrack_1/features/workout/presentation/screens/workout_screen.dart';
 import 'package:flutter_vitatrack_1/features/AI_Coach/presentation/screens/ai_coach_screen.dart';
-import 'package:flutter_vitatrack_1/screens/profile/profile_screen.dart';
+import 'package:flutter_vitatrack_1/features/profile/presentation/screens/profile_screen.dart';
 
 class BottomNav extends StatefulWidget {
   const BottomNav({super.key});

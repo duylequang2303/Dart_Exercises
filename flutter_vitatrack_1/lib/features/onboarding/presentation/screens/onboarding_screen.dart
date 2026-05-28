@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/theme.dart';
-import '../../widgets/bottom_nav.dart';
-import 'onboarding_provider.dart';
-import '../../features/auth/presentation/providers/auth_provider.dart';
-import '../../core/services/user_profile_service.dart';
-import '../../features/auth/presentation/providers/onboarding_status_provider.dart';
+import 'package:flutter_vitatrack_1/core/theme.dart';
+import 'package:flutter_vitatrack_1/widgets/bottom_nav.dart';
+import '../providers/onboarding_provider.dart';
+import 'package:flutter_vitatrack_1/features/auth/presentation/providers/auth_provider.dart';
+import 'package:flutter_vitatrack_1/core/services/user_profile_service.dart';
+import 'package:flutter_vitatrack_1/features/auth/presentation/providers/onboarding_status_provider.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});

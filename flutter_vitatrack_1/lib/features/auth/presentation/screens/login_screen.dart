@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/theme.dart';
-import '../../features/auth/presentation/providers/auth_provider.dart';
+import 'package:flutter_vitatrack_1/core/theme.dart';
+import 'package:flutter_vitatrack_1/features/auth/presentation/providers/auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});

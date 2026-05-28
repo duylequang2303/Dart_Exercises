@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_vitatrack_1/core/theme.dart';
-import 'package:flutter_vitatrack_1/screens/notification/notification_screen.dart';
+import 'package:flutter_vitatrack_1/features/notification/presentation/screens/notification_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_vitatrack_1/features/health/presentation/providers/health_provider.dart';
 import 'package:flutter_vitatrack_1/features/auth/presentation/providers/auth_provider.dart';

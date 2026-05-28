@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_vitatrack_1/screens/auth/login_screen.dart';
+import 'package:flutter_vitatrack_1/features/auth/presentation/screens/login_screen.dart';
 import 'package:flutter_vitatrack_1/widgets/bottom_nav.dart';
 
 class VitaTrackRoutes {

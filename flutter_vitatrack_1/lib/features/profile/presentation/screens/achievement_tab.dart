@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../core/theme.dart';
+import 'package:flutter_vitatrack_1/core/theme.dart';
 
 class AchievementTab extends StatefulWidget {
   const AchievementTab({super.key});

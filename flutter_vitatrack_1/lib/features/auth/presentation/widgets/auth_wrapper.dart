@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../screens/auth/login_screen.dart';
-import '../../../../screens/onboarding/onboarding_screen.dart';
+import 'package:flutter_vitatrack_1/features/auth/presentation/screens/login_screen.dart';
+import 'package:flutter_vitatrack_1/features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../../../../widgets/bottom_nav.dart';
 import '../providers/auth_provider.dart';
 import '../providers/onboarding_status_provider.dart';
