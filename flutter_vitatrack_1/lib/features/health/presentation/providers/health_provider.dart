@@ -1,41 +1,49 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_vitatrack_1/services/mock_data_service.dart';
-
 import '../../domain/entities/health_metric.dart';
-import '../../data/health_repository.dart';
+import '../../data/datasources/pedometer_datasource.dart';
 
-/// A simple StateNotifier that keeps the latest HealthMetric and updates when
-/// the MockDataService notifies listeners.
 class HealthNotifier extends StateNotifier<HealthMetric> {
-  final HealthRepository _repo;
-  final MockDataService _svc;
-  late final void Function() _listener;
+  final PedometerDatasource _pedometer;
+  final MockDataService _mockSvc;
+  late final void Function() _mockListener;
 
-  HealthNotifier(this._repo, this._svc)
+  HealthNotifier(this._pedometer, this._mockSvc)
       : super(const HealthMetric(steps: 0, heartRate: 0, sleepHours: 0.0)) {
-    _listener = () {
-      _refresh();
+    
+    // Vẫn dùng MockData cho nhịp tim vì Pedometer chỉ đếm bước
+    _mockListener = () {
+      state = state.copyWith(heartRate: _mockSvc.heartRate);
     };
-    _svc.addListener(_listener);
-    _refresh();
-  }
+    _mockSvc.addListener(_mockListener);
+    state = state.copyWith(heartRate: _mockSvc.heartRate);
 
-  Future<void> _refresh() async {
-    final metric = await _repo.fetchLatest();
-    state = metric;
+    // Lắng nghe dữ liệu THẬT từ cảm biến đếm bước
+    _pedometer.startListening(
+      (steps) {
+        state = state.copyWith(steps: steps);
+      },
+      (error) {
+        debugPrint("HealthNotifier Error: $error");
+      }
+    );
   }
 
   @override
   void dispose() {
-    try {
-      _svc.removeListener(_listener);
-    } catch (_) {}
+    _mockSvc.removeListener(_mockListener);
+    _pedometer.stopListening();
     super.dispose();
   }
 }
 
+final pedometerDatasourceProvider = Provider<PedometerDatasource>((ref) {
+  return PedometerDatasource();
+});
+
 final healthProvider = StateNotifierProvider<HealthNotifier, HealthMetric>((ref) {
-  final svc = MockDataService.instance;
-  final repo = HealthRepository(service: svc);
-  return HealthNotifier(repo, svc);
+  final pedometer = ref.watch(pedometerDatasourceProvider);
+  final mockSvc = MockDataService.instance;
+  return HealthNotifier(pedometer, mockSvc);
 });
