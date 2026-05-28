@@ -3,6 +3,8 @@ import 'package:flutter_vitatrack_1/core/theme.dart';
 import 'package:flutter_vitatrack_1/screens/notification/notification_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_vitatrack_1/features/health/presentation/providers/health_provider.dart';
+import 'package:flutter_vitatrack_1/features/auth/presentation/providers/auth_provider.dart';
+import 'package:flutter_vitatrack_1/features/nutrition/presentation/providers/nutrition_provider.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -10,6 +12,13 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final health = ref.watch(healthProvider);
+    final authState = ref.watch(authProvider);
+    final nutrition = ref.watch(nutritionProvider);
+    
+    final tenHienThi = authState.nguoiDung?.tenHienThi ?? 'Bạn';
+    final calo = nutrition.caloDaNap;
+    final litNuoc = (nutrition.soLyNuoc * 0.25).toStringAsFixed(1); // Giả sử 1 ly = 250ml
+    
     final stepProgress = (health.steps / 10000.0).clamp(0.0, 1.0);
     final sleepHours = health.sleepHours == 0.0 ? 7.5 : health.sleepHours;
     final sleepH = sleepHours.truncate();
@@ -36,9 +45,9 @@ class HomeScreen extends ConsumerWidget {
                         style: TextStyle(color: VitaTrackTheme.mauChuPhu, fontSize: 14),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        'Duy', // Tên hiển thị
-                        style: TextStyle(
+                      Text(
+                        tenHienThi, // Tên hiển thị từ AuthProvider
+                        style: const TextStyle(
                           color: VitaTrackTheme.mauChu,
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -153,9 +162,9 @@ class HomeScreen extends ConsumerWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _taoThongSoNho(Icons.local_fire_department, VitaTrackTheme.mauNguyHiem, '1,850', 'kcal'),
+                        _taoThongSoNho(Icons.local_fire_department, VitaTrackTheme.mauNguyHiem, '$calo', 'kcal'),
                         _taoThongSoNho(Icons.do_not_step, VitaTrackTheme.mauThanhCong, '${health.steps}', 'bước'),
-                        _taoThongSoNho(Icons.water_drop, VitaTrackTheme.mauChinh, '1.8', 'lít'),
+                        _taoThongSoNho(Icons.water_drop, VitaTrackTheme.mauChinh, litNuoc, 'lít'),
                       ],
                     ),
                   ],
@@ -182,15 +191,15 @@ class HomeScreen extends ConsumerWidget {
               // ===== LƯỚI 4 CARD HOẠT ĐỘNG =====
               Row(
                 children: [
-                  Expanded(child: _taoCardHoatDong(Icons.local_fire_department, 'Calories', '1,850', '2,200', VitaTrackTheme.mauNguyHiem, 0.8)),
+                  Expanded(child: _taoCardHoatDong(Icons.local_fire_department, 'Calories', '$calo', '${authState.nguoiDung?.caloMucTieu ?? 2000}', VitaTrackTheme.mauNguyHiem, (calo/(authState.nguoiDung?.caloMucTieu ?? 2000)).clamp(0.0, 1.0))),
                   const SizedBox(width: 16),
-                  Expanded(child: _taoCardHoatDong(Icons.water_drop, 'Nước uống', '1.8L', '2.5L', VitaTrackTheme.mauChinh, 0.7)),
+                  Expanded(child: _taoCardHoatDong(Icons.water_drop, 'Nước uống', '${litNuoc}L', '${(authState.nguoiDung?.nuocMucTieu ?? 8) * 0.25}L', VitaTrackTheme.mauChinh, (double.parse(litNuoc)/((authState.nguoiDung?.nuocMucTieu ?? 8) * 0.25)).clamp(0.0, 1.0))),
                 ],
               ),
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Expanded(child: _taoCardHoatDong(Icons.do_not_step, 'Số bước', '${health.steps}', '10,000', VitaTrackTheme.mauThanhCong, stepProgress)),
+                  Expanded(child: _taoCardHoatDong(Icons.do_not_step, 'Số bước', '${health.steps}', '10000', VitaTrackTheme.mauThanhCong, stepProgress)),
                   const SizedBox(width: 16),
                   Expanded(child: _taoCardHoatDong(Icons.nightlight_round, 'Giấc ngủ', sleepText, '8h', VitaTrackTheme.mauPhu, (sleepHours / 8.0).clamp(0.0, 1.0))),
                 ],
@@ -259,7 +268,7 @@ class HomeScreen extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: VitaTrackTheme.mauChinh.withOpacity(0.2),
+                        color: VitaTrackTheme.mauChinh.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.bolt, color: VitaTrackTheme.mauChinh),
