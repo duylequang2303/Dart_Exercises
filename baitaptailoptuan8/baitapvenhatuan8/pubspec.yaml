@@ -1,0 +1,18 @@
+name: baitapvenhatuan8
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.8
+
+dependencies:
+  flutter:
+    sdk: flutter
+  image_picker: ^1.0.8
+  audioplayers: ^5.2.1
+  sqflite: ^2.3.3
+  sqflite_common_ffi: ^2.3.0
+  sqlite3_flutter_libs: ^0.5.20
+  path: ^1.9.0
