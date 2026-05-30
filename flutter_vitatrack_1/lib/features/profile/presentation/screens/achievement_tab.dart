@@ -75,7 +75,7 @@ class _AchievementTabState extends State<AchievementTab> {
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(colors: [VitaTrackTheme.mauPhu, VitaTrackTheme.mauChinh]),
                           borderRadius: BorderRadius.circular(6),
-                          boxShadow: [BoxShadow(color: VitaTrackTheme.mauChinh.withOpacity(0.5), blurRadius: 8)],
+                          boxShadow: [BoxShadow(color: VitaTrackTheme.mauChinh.withValues(alpha: 0.5), blurRadius: 8)],
                         ),
                       ),
                     ],
@@ -94,7 +94,7 @@ class _AchievementTabState extends State<AchievementTab> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text('Huy hiệu của bạn', style: TextStyle(color: VitaTrackTheme.mauChu, fontSize: 18, fontWeight: FontWeight.bold)),
-            Text('Đã mở 3/8', style: TextStyle(color: VitaTrackTheme.mauChinh.withOpacity(0.8), fontWeight: FontWeight.bold)),
+            Text('Đã mở 3/8', style: TextStyle(color: VitaTrackTheme.mauChinh.withValues(alpha: 0.8), fontWeight: FontWeight.bold)),
           ],
         ),
         const SizedBox(height: 16),
@@ -150,22 +150,22 @@ class _AchievementTabState extends State<AchievementTab> {
                   Container(
                     width: 70, height: 70,
                     decoration: BoxDecoration(
-                      color: daMoKhoa ? mauSac.withOpacity(0.15) : VitaTrackTheme.mauCard,
+                      color: daMoKhoa ? mauSac.withValues(alpha: 0.15) : VitaTrackTheme.mauCard,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: daMoKhoa ? mauSac.withOpacity(0.5) : VitaTrackTheme.mauCardNhat, 
+                        color: daMoKhoa ? mauSac.withValues(alpha: 0.5) : VitaTrackTheme.mauCardNhat, 
                         width: 2
                       ),
-                      boxShadow: daMoKhoa ? [BoxShadow(color: mauSac.withOpacity(0.3), blurRadius: 12)] : [],
+                      boxShadow: daMoKhoa ? [BoxShadow(color: mauSac.withValues(alpha: 0.3), blurRadius: 12)] : [],
                     ),
-                    child: Icon(icon, color: daMoKhoa ? mauSac : VitaTrackTheme.mauChuPhu.withOpacity(0.3), size: 32),
+                    child: Icon(icon, color: daMoKhoa ? mauSac : VitaTrackTheme.mauChuPhu.withValues(alpha: 0.3), size: 32),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     tieuDe, 
                     textAlign: TextAlign.center, 
                     style: TextStyle(
-                      color: daMoKhoa ? VitaTrackTheme.mauChu : VitaTrackTheme.mauChuPhu.withOpacity(0.5), 
+                      color: daMoKhoa ? VitaTrackTheme.mauChu : VitaTrackTheme.mauChuPhu.withValues(alpha: 0.5), 
                       fontSize: 12, 
                       fontWeight: daMoKhoa ? FontWeight.bold : FontWeight.normal,
                       height: 1.3
@@ -207,7 +207,7 @@ class _AchievementTabState extends State<AchievementTab> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(color: mauSac.withOpacity(0.2), shape: BoxShape.circle, boxShadow: [BoxShadow(color: mauSac.withOpacity(0.4), blurRadius: 20)]),
+                  decoration: BoxDecoration(color: mauSac.withValues(alpha: 0.2), shape: BoxShape.circle, boxShadow: [BoxShadow(color: mauSac.withValues(alpha: 0.4), blurRadius: 20)]),
                   child: Icon(icon, color: mauSac, size: 64),
                 ),
                 const SizedBox(height: 24),

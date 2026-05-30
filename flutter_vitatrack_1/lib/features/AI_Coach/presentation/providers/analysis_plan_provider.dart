@@ -62,7 +62,6 @@ class HealthAnalysisNotifier extends AsyncNotifier<HealthAnalysis> {
   Future<HealthAnalysis> _fetchAnalysis() async {
     final context = ref.read(userHealthContextProvider);
     final useCase = ref.read(getHealthAnalysisUseCaseProvider);
-    if (useCase == null) throw Exception('Hệ thống chưa sẵn sàng.');
     return useCase.execute(context);
   }
 
@@ -112,7 +111,6 @@ class CoachPlanNotifier extends StateNotifier<CoachPlanState> {
     try {
       final useCase = _ref.read(getCoachPlanUseCaseProvider);
       final context = _ref.read(userHealthContextProvider);
-      if (useCase == null) throw Exception('Hệ thống chưa sẵn sàng.');
       final plan = await useCase.execute(context);
       state = state.copyWith(plan: plan, isLoading: false);
     } catch (e) {
@@ -146,7 +144,6 @@ class CoachPlanNotifier extends StateNotifier<CoachPlanState> {
 
     try {
       final useCase = _ref.read(updateTaskCompletionUseCaseProvider);
-      if (useCase == null) return;
       await useCase.execute(taskId: taskId, isCompleted: newIsCompleted);
     } catch (e) {
       state = state.copyWith(plan: currentPlan);

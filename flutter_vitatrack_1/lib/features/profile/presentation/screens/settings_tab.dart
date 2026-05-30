@@ -128,15 +128,16 @@ class _SettingsTabState extends ConsumerState<SettingsTab> {
               onPressed: () async {
                 if (formKey.currentState!.validate()) {
                   final mkMoi = mkMoiController.text;
+                  final messenger = ScaffoldMessenger.of(context);
                   Navigator.pop(context);
                   await ref.read(profileProvider.notifier).doiMatKhau(mkMoi);
                   
                   if (!mounted) return;
                   final error = ref.read(profileProvider).loi;
                   if (error != null) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error), backgroundColor: VitaTrackTheme.mauNguyHiem));
+                    messenger.showSnackBar(SnackBar(content: Text(error), backgroundColor: VitaTrackTheme.mauNguyHiem));
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đổi mật khẩu thành công'), backgroundColor: VitaTrackTheme.mauThanhCong));
+                    messenger.showSnackBar(const SnackBar(content: Text('Đổi mật khẩu thành công'), backgroundColor: VitaTrackTheme.mauThanhCong));
                   }
                 }
               },

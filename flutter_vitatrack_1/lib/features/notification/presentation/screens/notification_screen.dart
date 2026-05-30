@@ -228,10 +228,10 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: daDoc ? VitaTrackTheme.mauCard.withOpacity(0.5) : VitaTrackTheme.mauCard,
+          color: daDoc ? VitaTrackTheme.mauCard.withValues(alpha: 0.5) : VitaTrackTheme.mauCard,
           borderRadius: BorderRadius.circular(VitaTrackTheme.boGocVua),
           border: Border.all(
-            color: daDoc ? Colors.transparent : VitaTrackTheme.mauChinh.withOpacity(0.3),
+            color: daDoc ? Colors.transparent : VitaTrackTheme.mauChinh.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -241,7 +241,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
             // Icon thông báo
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: tb['mau'].withOpacity(0.15), shape: BoxShape.circle),
+              decoration: BoxDecoration(color: tb['mau'].withValues(alpha: 0.15), shape: BoxShape.circle),
               child: Icon(tb['icon'], color: tb['mau'], size: 20),
             ),
             const SizedBox(width: 16),
@@ -263,7 +263,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                   const SizedBox(height: 8),
                   Text(
                     tb['thoiGian'],
-                    style: TextStyle(color: daDoc ? VitaTrackTheme.mauChuPhu.withOpacity(0.5) : VitaTrackTheme.mauChinh, fontSize: 11, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: daDoc ? VitaTrackTheme.mauChuPhu.withValues(alpha: 0.5) : VitaTrackTheme.mauChinh, fontSize: 11, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),

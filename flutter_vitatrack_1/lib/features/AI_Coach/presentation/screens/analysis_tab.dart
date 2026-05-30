@@ -18,7 +18,7 @@ class AnalysisTab extends ConsumerWidget {
       backgroundColor: AppColors.surface,
       child: analysisAsync.when(
         loading: () => const _LoadingView(),
-        error: (_, __) => _ErrorView(
+        error: (e, s) => _ErrorView(
           onRetry: () =>
               ref.read(healthAnalysisProvider.notifier).refresh(),
         ),
@@ -117,7 +117,7 @@ class _ErrorView extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.cloud_off_rounded,
-                color: AppColors.textSecondary.withOpacity(0.5),
+                color: AppColors.textSecondary.withValues(alpha: 0.5),
                 size: 64),
             const SizedBox(height: 16),
             const Text('Không thể kết nối AI',
@@ -167,12 +167,12 @@ class _AiSummaryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.accent.withOpacity(0.4)),
+        border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppColors.accent.withOpacity(0.08),
+            AppColors.accent.withValues(alpha: 0.08),
             AppColors.surface,
           ],
         ),
@@ -183,7 +183,7 @@ class _AiSummaryCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.accent.withOpacity(0.15),
+              color: AppColors.accent.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(Icons.smart_toy_rounded,
@@ -238,15 +238,15 @@ class _FeedbackCard extends StatelessWidget {
     final borderColor =
         isPositive ? AppColors.positiveColor : Colors.orange;
     final bgColor = isPositive
-        ? AppColors.positiveColor.withOpacity(0.05)
-        : Colors.orange.withOpacity(0.05);
+        ? AppColors.positiveColor.withValues(alpha: 0.05)
+        : Colors.orange.withValues(alpha: 0.05);
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor.withOpacity(0.3)),
+        border: Border.all(color: borderColor.withValues(alpha: 0.3)),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -344,10 +344,10 @@ class _BodyStatusCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: bmiColor.withOpacity(0.15),
+                    color: bmiColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                        color: bmiColor.withOpacity(0.4)),
+                        color: bmiColor.withValues(alpha: 0.4)),
                   ),
                   child: Text(bmiCategory,
                       style: TextStyle(
@@ -404,7 +404,7 @@ class _BodyStatusCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(
                   horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: AppColors.accent.withOpacity(0.08),
+                color: AppColors.accent.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -904,7 +904,7 @@ class _MacroItem extends StatelessWidget {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.15),
+            color: color.withValues(alpha: 0.15),
             shape: BoxShape.circle,
           ),
           child: Center(

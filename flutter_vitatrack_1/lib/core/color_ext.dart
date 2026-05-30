@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 extension ColorValues on Color {
-  /// Compatibility helper: use .withValues(alpha: 0.15) in codebase.
-  Color withValues({required double alpha}) => withOpacity(alpha);
+  /// Compatibility helper: Flutter's built-in withValues() is used everywhere.
+  /// This extension is kept for any legacy call sites.
+  Color withAlpha255(int alpha) => withAlpha(alpha);
 }
