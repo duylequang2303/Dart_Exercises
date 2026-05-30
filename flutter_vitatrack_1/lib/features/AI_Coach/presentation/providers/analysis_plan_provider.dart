@@ -3,20 +3,46 @@ import '../../domain/entities/health_analysis.dart';
 import '../../domain/entities/coach_plan.dart';
 import '../../domain/entities/user_health_context.dart';
 import 'ai_coach_dependencies_provider.dart';
+import '../../../health/presentation/providers/health_provider.dart';
+import '../../../nutrition/presentation/providers/nutrition_provider.dart';
+import '../../../profile/presentation/providers/profile_provider.dart';
 
-// ─── Health Context (mock) ────────────────────────────────────
-// TODO: Thay bằng provider thực từ health/activity feature
+// ─── Health Context THẬT ──────────────────────────────────────
 
 final userHealthContextProvider = Provider<UserHealthContext>((ref) {
-  return const UserHealthContext(
-    stepsToday: 8290,
-    caloriesBurned: 450,
-    waterIntakeMl: 1800,
-    sleepHours: 7.5,
-    heartRateBpm: 72,
+  final health = ref.watch(healthProvider);
+  final nutrition = ref.watch(nutritionProvider);
+  final profile = ref.watch(profileProvider).profile;
+
+  double totalProtein = 0;
+  double totalCarbs = 0;
+  double totalFat = 0;
+  for (final meal in nutrition.lichSuBuaAn) {
+    totalProtein += (meal['protein'] as num?)?.toDouble() ?? 0;
+    totalCarbs += (meal['carbs'] as num?)?.toDouble() ?? 0;
+    totalFat += (meal['fat'] as num?)?.toDouble() ?? 0;
+  }
+
+  return UserHealthContext(
+    stepsToday: health.steps,
+    heartRateBpm: health.heartRate,
+    sleepHours: health.sleepHours,
     dailyStepsGoal: 10000,
-    dailyCaloriesGoal: 700,
+    caloriesBurned: nutrition.caloDaNap,
+    dailyCaloriesGoal: nutrition.caloMucTieu > 0
+        ? nutrition.caloMucTieu
+        : 2000,
+    waterIntakeMl: nutrition.soLyNuoc * 250,
     dailyWaterGoalMl: 2500,
+    proteinGram: totalProtein,
+    carbsGram: totalCarbs,
+    fatGram: totalFat,
+    tuoi: profile?.tuoi,
+    chieuCao: profile?.chieuCao,
+    canNang: profile?.canNang,
+    gioiTinh: profile?.gioiTinh,
+    mucTieu: profile?.mucTieu,
+    cuongDo: profile?.cuongDo,
   );
 });
 
@@ -34,8 +60,9 @@ class HealthAnalysisNotifier extends AsyncNotifier<HealthAnalysis> {
   }
 
   Future<HealthAnalysis> _fetchAnalysis() async {
-    final useCase = ref.read(getHealthAnalysisUseCaseProvider);
     final context = ref.read(userHealthContextProvider);
+    final useCase = ref.read(getHealthAnalysisUseCaseProvider);
+    if (useCase == null) throw Exception('Hệ thống chưa sẵn sàng.');
     return useCase.execute(context);
   }
 
@@ -77,7 +104,7 @@ class CoachPlanNotifier extends StateNotifier<CoachPlanState> {
   final Ref _ref;
 
   CoachPlanNotifier(this._ref) : super(const CoachPlanState()) {
-    fetchPlan();
+    Future.microtask(() => fetchPlan());
   }
 
   Future<void> fetchPlan() async {
@@ -85,12 +112,13 @@ class CoachPlanNotifier extends StateNotifier<CoachPlanState> {
     try {
       final useCase = _ref.read(getCoachPlanUseCaseProvider);
       final context = _ref.read(userHealthContextProvider);
+      if (useCase == null) throw Exception('Hệ thống chưa sẵn sàng.');
       final plan = await useCase.execute(context);
       state = state.copyWith(plan: plan, isLoading: false);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Không thể tải kế hoạch. Vui lòng thử lại.',
+        errorMessage: e.toString(),
       );
     }
   }
@@ -99,13 +127,13 @@ class CoachPlanNotifier extends StateNotifier<CoachPlanState> {
     final currentPlan = state.plan;
     if (currentPlan == null) return;
 
-    final taskIndex = currentPlan.dailyTasks.indexWhere((t) => t.id == taskId);
+    final taskIndex =
+        currentPlan.dailyTasks.indexWhere((t) => t.id == taskId);
     if (taskIndex == -1) return;
 
     final currentTask = currentPlan.dailyTasks[taskIndex];
     final newIsCompleted = !currentTask.isCompleted;
 
-    // Cập nhật UI ngay lập tức
     final updatedTasks = List.of(currentPlan.dailyTasks);
     updatedTasks[taskIndex] = currentTask.copyWith(isCompleted: newIsCompleted);
 
@@ -116,9 +144,9 @@ class CoachPlanNotifier extends StateNotifier<CoachPlanState> {
       ),
     );
 
-    // Lưu local, rollback nếu lỗi
     try {
       final useCase = _ref.read(updateTaskCompletionUseCaseProvider);
+      if (useCase == null) return;
       await useCase.execute(taskId: taskId, isCompleted: newIsCompleted);
     } catch (e) {
       state = state.copyWith(plan: currentPlan);

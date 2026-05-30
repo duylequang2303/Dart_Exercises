@@ -1,5 +1,8 @@
 class HealthAnalysis {
   final String summary;
+  final List<String> diemTot;
+  final List<String> canCaiThien;
+  final String bmiDanhGia;
   final int sleepQualityChange;
   final double waterIntake;
   final double waterRemaining;
@@ -9,6 +12,9 @@ class HealthAnalysis {
 
   const HealthAnalysis({
     required this.summary,
+    required this.diemTot,
+    required this.canCaiThien,
+    required this.bmiDanhGia,
     required this.sleepQualityChange,
     required this.waterIntake,
     required this.waterRemaining,

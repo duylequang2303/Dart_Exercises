@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../../domain/entities/user_health_context.dart';
@@ -19,7 +18,7 @@ class GroqApiException implements Exception {
 /// Đây là nơi DUY NHẤT được phép gọi Groq API
 class GroqApiDataSource {
   static const String _baseUrl = 'https://api.groq.com/openai/v1';
-  static const String _model = 'llama3-70b-8192';
+  static const String _model = 'llama-3.3-70b-versatile';
 
   final String _apiKey;
   final Dio _dio;
@@ -30,20 +29,21 @@ class GroqApiDataSource {
   })  : _apiKey = apiKey,
         _dio = dio ?? Dio();
 
-  // ─── System Prompt ────────────────────────────────────────
+  // ─── System Prompt cho Chat ───────────────────────────────
 
   String _buildSystemPrompt(UserHealthContext context) {
     return '''
-Bạn là VitaTrack AI Coach - trợ lý sức khỏe thông minh.
+Bạn là VitaTrack AI Coach - trợ lý sức khỏe thông minh, cá nhân hóa.
 
 VAI TRÒ:
 - Tư vấn sức khỏe, tập luyện, dinh dưỡng và giấc ngủ
-- Phân tích dữ liệu và đưa ra lời khuyên cá nhân hóa
+- Phân tích dữ liệu và đưa ra lời khuyên PHÙ HỢP với thể trạng người dùng
 - Động viên người dùng đạt mục tiêu sức khỏe
 
 QUY TẮC:
 - Luôn trả lời bằng tiếng Việt, thân thiện và ngắn gọn
-- Dựa vào dữ liệu thực tế của người dùng để tư vấn
+- Dựa vào dữ liệu THỰC TẾ của người dùng để tư vấn
+- Tính đến tuổi, giới tính, BMI khi đưa ra lời khuyên
 - Không chẩn đoán bệnh
 
 ${context.toPromptContext()}
@@ -63,7 +63,10 @@ ${context.toPromptContext()}
       {'role': 'user', 'content': userMessage},
     ];
 
-    final responseText = await _callGroqApi(messages: messages, maxTokens: 500);
+    final responseText = await _callGroqApi(
+      messages: messages,
+      maxTokens: 500,
+    );
 
     return ChatMessageModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -75,51 +78,77 @@ ${context.toPromptContext()}
 
   // ─── Health Analysis ──────────────────────────────────────
 
-  Future<HealthAnalysisModel> getHealthAnalysis(UserHealthContext context) async {
+  Future<HealthAnalysisModel> getHealthAnalysis(
+      UserHealthContext context) async {
     final messages = [
       {
         'role': 'system',
         'content': '''
-Bạn là VitaTrack AI Coach. Phân tích dữ liệu sức khỏe và trả về JSON.
+Bạn là VitaTrack AI Coach - chuyên gia sức khỏe cá nhân hóa.
+Nhiệm vụ: Phân tích dữ liệu sức khỏe và trả về JSON CHÍNH XÁC.
+
+QUY TẮC QUAN TRỌNG:
+1. Chỉ đánh giá dựa trên dữ liệu THỰC TẾ được cung cấp
+2. Tính đến thể trạng cá nhân (tuổi, giới tính, BMI, mục tiêu)
+3. Hôm nay là ${_getTodayName()} - chỉ điền dữ liệu ngày đã qua, ngày chưa đến để 0
+4. diemTot và canCaiThien phải CỤ THỂ, dựa trên số liệu thực
+5. waterIntake và waterRemaining tính bằng LÍT (chia cho 1000)
+6. caloriesGoalPercent là phần trăm đạt được so với mục tiêu
 
 ${context.toPromptContext()}
 
-Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
+Trả về ĐÚNG JSON này, KHÔNG thêm text khác:
 {
-  "summary": "Nhận xét ngắn gọn 1-2 câu về phong độ tổng thể",
-  "sleepQualityChange": 15,
-  "waterIntake": 1.8,
-  "waterRemaining": 0.7,
-  "caloriesBurned": 450,
-  "caloriesGoalPercent": 65,
+  "summary": "Nhận xét 2-3 câu cụ thể về phong độ hôm nay dựa trên dữ liệu thực tế",
+  "diemTot": [
+    "Điểm tốt cụ thể 1 kèm số liệu thực tế",
+    "Điểm tốt cụ thể 2 kèm số liệu thực tế"
+  ],
+  "canCaiThien": [
+    "Việc cần cải thiện 1 kèm gợi ý cụ thể",
+    "Việc cần cải thiện 2 kèm gợi ý cụ thể"
+  ],
+  "bmiDanhGia": "Đánh giá BMI và ý nghĩa với sức khỏe của người dùng",
+  "sleepQualityChange": 0,
+  "waterIntake": 0.0,
+  "waterRemaining": 0.0,
+  "caloriesBurned": 0,
+  "caloriesGoalPercent": 0,
   "weeklyActivity": {
-    "T2": 80, "T3": 60, "T4": 90,
-    "T5": 45, "T6": 70, "T7": 85, "CN": 30
+    "T2": 0, "T3": 0, "T4": 0,
+    "T5": 0, "T6": 0, "T7": 0, "CN": 0
   }
 }
 ''',
       },
-      {'role': 'user', 'content': 'Phân tích dữ liệu sức khỏe hôm nay của tôi.'},
+      {
+        'role': 'user',
+        'content': 'Phân tích sức khỏe hôm nay của tôi.',
+      },
     ];
 
-    final responseText = await _callGroqApi(messages: messages, maxTokens: 800);
+    final responseText = await _callGroqApi(
+      messages: messages,
+      maxTokens: 1000,
+    );
     return _parseHealthAnalysis(responseText, context);
   }
 
-  HealthAnalysisModel _parseHealthAnalysis(String responseText, UserHealthContext context) {
+  HealthAnalysisModel _parseHealthAnalysis(
+      String responseText, UserHealthContext context) {
     try {
       final jsonString = _extractJson(responseText);
       final json = jsonDecode(jsonString) as Map<String, dynamic>;
       return HealthAnalysisModel.fromJson(json);
     } catch (e) {
-      // Fallback nếu AI không trả đúng JSON
       return HealthAnalysisModel.fallback(
         summaryText: responseText.length > 200
             ? responseText.substring(0, 200)
             : responseText,
         caloriesBurned: context.caloriesBurned,
         waterIntake: context.waterIntakeMl / 1000,
-        waterRemaining: (context.dailyWaterGoalMl - context.waterIntakeMl) / 1000,
+        waterRemaining:
+            (context.dailyWaterGoalMl - context.waterIntakeMl) / 1000,
       );
     }
   }
@@ -131,29 +160,40 @@ Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
       {
         'role': 'system',
         'content': '''
-Bạn là VitaTrack AI Coach. Tạo kế hoạch sức khỏe và trả về JSON.
+Bạn là VitaTrack AI Coach. Tạo kế hoạch sức khỏe CÁ NHÂN HÓA và trả về JSON.
+
+QUY TẮC:
+- Dựa vào mục tiêu, cường độ tập và thể trạng để tạo kế hoạch PHÙ HỢP
+- Task phải THỰC TẾ và KHẢ THI với người dùng
+- progressPercent dựa trên dữ liệu thực tế hôm nay
 
 ${context.toPromptContext()}
 
 Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
 {
   "dailyTasks": [
-    {"id": "task_1", "title": "Uống 2L nước", "isCompleted": false},
-    {"id": "task_2", "title": "Đi bộ 10,000 bước", "isCompleted": false},
-    {"id": "task_3", "title": "Tập yoga 20 phút", "isCompleted": false},
-    {"id": "task_4", "title": "Ngủ trước 23h", "isCompleted": false}
+    {"id": "task_1", "title": "Task phù hợp với mục tiêu 1", "isCompleted": false},
+    {"id": "task_2", "title": "Task phù hợp với mục tiêu 2", "isCompleted": false},
+    {"id": "task_3", "title": "Task phù hợp với mục tiêu 3", "isCompleted": false},
+    {"id": "task_4", "title": "Task phù hợp với mục tiêu 4", "isCompleted": false}
   ],
   "weeklyGoals": [
-    {"id": "goal_1", "title": "Giảm 0.5kg", "progressPercent": 60},
-    {"id": "goal_2", "title": "Tập 5 ngày/tuần", "progressPercent": 80}
+    {"id": "goal_1", "title": "Mục tiêu tuần phù hợp 1", "progressPercent": 0},
+    {"id": "goal_2", "title": "Mục tiêu tuần phù hợp 2", "progressPercent": 0}
   ]
 }
 ''',
       },
-      {'role': 'user', 'content': 'Tạo kế hoạch phù hợp với tình trạng của tôi.'},
+      {
+        'role': 'user',
+        'content': 'Tạo kế hoạch phù hợp với thể trạng và mục tiêu của tôi.',
+      },
     ];
 
-    final responseText = await _callGroqApi(messages: messages, maxTokens: 600);
+    final responseText = await _callGroqApi(
+      messages: messages,
+      maxTokens: 600,
+    );
     return _parseCoachPlan(responseText);
   }
 
@@ -163,7 +203,6 @@ Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
       final json = jsonDecode(jsonString) as Map<String, dynamic>;
       return CoachPlanModel.fromJson(json);
     } catch (e) {
-      // Fallback kế hoạch mặc định nếu parse thất bại
       return CoachPlanModel.fromJson({
         'dailyTasks': [
           {'id': 'task_1', 'title': 'Uống 2L nước', 'isCompleted': false},
@@ -172,7 +211,11 @@ Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
           {'id': 'task_4', 'title': 'Ngủ trước 23h', 'isCompleted': false},
         ],
         'weeklyGoals': [
-          {'id': 'goal_1', 'title': 'Duy trì thói quen tốt', 'progressPercent': 50},
+          {
+            'id': 'goal_1',
+            'title': 'Duy trì thói quen tốt',
+            'progressPercent': 50
+          },
         ],
       });
     }
@@ -209,8 +252,9 @@ Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
       }
 
       final choices = response.data['choices'] as List<dynamic>;
-
-      if (choices.isEmpty) throw const GroqApiException('Groq trả về kết quả rỗng');
+      if (choices.isEmpty) {
+        throw const GroqApiException('Groq trả về kết quả rỗng');
+      }
 
       final content = choices[0]['message']['content'] as String?;
       if (content == null || content.isEmpty) {
@@ -220,18 +264,35 @@ Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
       return content;
     } on DioException catch (e) {
       throw GroqApiException(
-        e.response?.data['error']?['message'] ?? e.message ?? 'Lỗi kết nối Dio',
+        e.response?.data['error']?['message'] ??
+            e.message ??
+            'Lỗi kết nối Dio',
         statusCode: e.response?.statusCode,
       );
     } catch (e) {
+      if (e is GroqApiException) rethrow;
       throw GroqApiException('Lỗi không xác định: ${e.toString()}');
     }
   }
 
-  // ─── Helper ───────────────────────────────────────────────
+  // ─── Helpers ──────────────────────────────────────────────
+
+  /// Lấy tên ngày hôm nay bằng tiếng Việt
+  String _getTodayName() {
+    final weekday = DateTime.now().weekday;
+    const days = {
+      1: 'T2 (Thứ Hai)',
+      2: 'T3 (Thứ Ba)',
+      3: 'T4 (Thứ Tư)',
+      4: 'T5 (Thứ Năm)',
+      5: 'T6 (Thứ Sáu)',
+      6: 'T7 (Thứ Bảy)',
+      7: 'CN (Chủ Nhật)',
+    };
+    return days[weekday] ?? 'T2';
+  }
 
   /// Trích xuất JSON thuần từ response
-  /// AI đôi khi bọc JSON trong ```json ... ```
   String _extractJson(String text) {
     final jsonBlockRegex = RegExp(r'```json\s*([\s\S]*?)\s*```');
     final match = jsonBlockRegex.firstMatch(text);
