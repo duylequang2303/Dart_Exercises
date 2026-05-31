@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "971048414433",
+    "project_id": "student-firebase-app-97883",
+    "storage_bucket": "student-firebase-app-97883.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:971048414433:android:85560c2f35c6b784691ba0",
+        "android_client_info": {
+          "package_name": "com.example.baitapvenhabuoi11"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBZR0G7oJqHoRsj1Zog3r61T30UTupWzrA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:971048414433:android:ab49f3f323efcf20691ba0",
+        "android_client_info": {
+          "package_name": "com.example.flutter_vitatrack_1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBZR0G7oJqHoRsj1Zog3r61T30UTupWzrA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
