@@ -1,7 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_vitatrack_1/core/theme.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:flutter_vitatrack_1/features/AI_Coach/presentation/providers/ai_coach_dependencies_provider.dart';
 
 // Import các provider và entity mới
 import 'package:flutter_vitatrack_1/features/nutrition/presentation/providers/nutrition_provider.dart';
@@ -18,14 +21,33 @@ class AddFoodScreen extends ConsumerStatefulWidget {
 class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
   String _query = '';
 
-  void _openAiCamera() {
+  void _openAiCamera() async {
     HapticFeedback.mediumImpact();
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const _AiCameraSheet(),
-    );
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: ImageSource.camera, imageQuality: 50);
+      if (image == null) return;
+
+      final bytes = await image.readAsBytes();
+      final base64Image = base64Encode(bytes);
+
+      if (!mounted) return;
+
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => _AiCameraSheet(base64Image: base64Image),
+      );
+    } catch (e) {
+      debugPrint("Lỗi camera: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Không thể mở máy ảnh: $e"),
+          backgroundColor: VitaTrackTheme.mauNguyHiem,
+        ),
+      );
+    }
   }
 
   @override
@@ -238,23 +260,41 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
   }
 }
 
-// Widget _AiCameraSheet giữ nguyên như logic cũ của bạn
 class _AiCameraSheet extends ConsumerStatefulWidget {
-  const _AiCameraSheet();
+  final String base64Image;
+  const _AiCameraSheet({required this.base64Image});
 
   @override
   ConsumerState<_AiCameraSheet> createState() => _AiCameraSheetState();
 }
 
 class _AiCameraSheetState extends ConsumerState<_AiCameraSheet> {
-  int _step = 0;
+  int _step = 0; // 0: loading, 1: success, 2: error
+  Map<String, dynamic> _result = {};
 
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 1200), () {
-      if (mounted) setState(() => _step = 1);
-    });
+    _analyzeImage();
+  }
+
+  void _analyzeImage() async {
+    try {
+      final groq = ref.read(groqApiDataSourceProvider);
+      final res = await groq.analyzeFoodImage(widget.base64Image);
+      if (mounted) {
+        setState(() {
+          _result = res;
+          _step = 1;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _step = 2;
+        });
+      }
+    }
   }
 
   @override
@@ -264,7 +304,11 @@ class _AiCameraSheetState extends ConsumerState<_AiCameraSheet> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
           color: VitaTrackTheme.mauCard, borderRadius: BorderRadius.circular(20)),
-      child: _step == 0 ? _buildLoading() : _buildResult(context),
+      child: _step == 0 
+          ? _buildLoading() 
+          : _step == 1 
+              ? _buildResult(context)
+              : _buildError(),
     );
   }
 
@@ -283,22 +327,59 @@ class _AiCameraSheetState extends ConsumerState<_AiCameraSheet> {
         SizedBox(height: 18),
       ]);
 
+  Widget _buildError() => Column(mainAxisSize: MainAxisSize.min, children: [
+        const SizedBox(height: 12),
+        const Icon(Icons.error_outline_rounded, color: VitaTrackTheme.mauNguyHiem, size: 48),
+        const SizedBox(height: 18),
+        const Text('Lỗi phân tích món ăn',
+            style: TextStyle(
+                color: VitaTrackTheme.mauChu,
+                fontSize: 16,
+                fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        const Text('Vui lòng thử chụp lại ảnh rõ nét hơn.',
+            style: TextStyle(color: VitaTrackTheme.mauChuPhu, fontSize: 13)),
+        const SizedBox(height: 18),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+                backgroundColor: VitaTrackTheme.mauChinh,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12))),
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Đóng',
+                style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16)),
+          ),
+        ),
+      ]);
+
   Widget _buildResult(BuildContext context) {
+    final ten = _result['tenMonAn'] ?? 'Món ăn';
+    final calo = _result['calo'] ?? 0;
+    final protein = _result['protein'] ?? 0.0;
+    final carbs = _result['carbs'] ?? 0.0;
+    final fat = _result['fat'] ?? 0.0;
+
     return Column(mainAxisSize: MainAxisSize.min, children: [
       const Icon(Icons.check_circle_rounded,
           color: VitaTrackTheme.mauThanhCong, size: 48),
       const SizedBox(height: 12),
-      const Text('Đã nhận diện: Cơm Tấm Sườn',
-          style: TextStyle(
+      Text('Đã nhận diện: $ten',
+          style: const TextStyle(
               color: VitaTrackTheme.mauChu,
               fontSize: 16,
               fontWeight: FontWeight.bold)),
       const SizedBox(height: 12),
       Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-        _macroChip('600 kcal', VitaTrackTheme.mauChinh),
-        _macroChip('P: 25g', VitaTrackTheme.mauNguyHiem),
-        _macroChip('C: 70g', VitaTrackTheme.mauCanhBao),
-        _macroChip('F: 20g', VitaTrackTheme.mauPhu),
+        _macroChip('$calo kcal', VitaTrackTheme.mauChinh),
+        _macroChip('P: ${protein}g', VitaTrackTheme.mauNguyHiem),
+        _macroChip('C: ${carbs}g', VitaTrackTheme.mauCanhBao),
+        _macroChip('F: ${fat}g', VitaTrackTheme.mauPhu),
       ]),
       const SizedBox(height: 18),
       SizedBox(
@@ -311,7 +392,12 @@ class _AiCameraSheetState extends ConsumerState<_AiCameraSheet> {
                   borderRadius: BorderRadius.circular(12))),
           onPressed: () {
             HapticFeedback.mediumImpact();
-            ref.read(nutritionProvider.notifier).themMonAn(600, 25, 70, 20);
+            ref.read(nutritionProvider.notifier).themMonAn(
+              calo,
+              protein.toDouble(),
+              carbs.toDouble(),
+              fat.toDouble(),
+            );
             Navigator.pop(context);
           },
           child: const Text('Thêm vào nhật ký',

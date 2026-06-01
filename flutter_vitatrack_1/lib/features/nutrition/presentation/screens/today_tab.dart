@@ -293,6 +293,32 @@ class _TodayTabState extends ConsumerState<TodayTab> {
   }
 
   Widget _taoCardBuaAn(Map<String, dynamic> bua) {
+    // Lấy thông tin bữa ăn hỗ trợ cả Mock và Firestore
+    final ten = bua['ten'] ?? bua['tenMonAn'] ?? 'Bữa ăn';
+    
+    final protein = bua['protein'] ?? 0;
+    final carbs = bua['carbs'] ?? 0;
+    final fat = bua['fat'] ?? 0;
+    
+    final chiTiet = bua['chiTiet'] ?? 'Protein: ${protein}g | Carbs: ${carbs}g | Chất béo: ${fat}g';
+
+    // Xác định icon phù hợp theo loại bữa ăn
+    IconData icon = Icons.restaurant_rounded;
+    if (bua['icon'] is IconData) {
+      icon = bua['icon'] as IconData;
+    } else {
+      final loai = (bua['loai'] ?? bua['loaiBuaAn'] ?? '').toString().toLowerCase();
+      if (loai == 'sang' || loai == 'breakfast') {
+        icon = Icons.wb_sunny_rounded;
+      } else if (loai == 'trua' || loai == 'lunch') {
+        icon = Icons.lunch_dining_rounded;
+      } else if (loai == 'toi' || loai == 'dinner') {
+        icon = Icons.dinner_dining_rounded;
+      } else if (loai == 'phu' || loai == 'snack') {
+        icon = Icons.cookie_rounded;
+      }
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -307,7 +333,7 @@ class _TodayTabState extends ConsumerState<TodayTab> {
             decoration: BoxDecoration(
                 color: VitaTrackTheme.mauPhu.withValues(alpha: 0.15),
                 shape: BoxShape.circle),
-            child: Icon(bua['icon'] as IconData, color: VitaTrackTheme.mauPhu, size: 20),
+            child: Icon(icon, color: VitaTrackTheme.mauPhu, size: 20),
           ),
           const SizedBox(width: 16),
           
@@ -316,25 +342,25 @@ class _TodayTabState extends ConsumerState<TodayTab> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(bua['ten'] as String,
+                Text(ten as String,
                     style: const TextStyle(
                         color: VitaTrackTheme.mauChu,
                         fontSize: 16,
                         fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
-                Text(bua['chiTiet'] as String,
+                Text(chiTiet as String,
                     style: const TextStyle(
                         color: VitaTrackTheme.mauChuPhu, fontSize: 12)),
                 const SizedBox(height: 8),
                 
-                // Thanh hiển thị Macro (Giả lập số liệu nhìn cho ngầu)
+                // Thanh hiển thị Macro thực tế từ Firestore
                 Row(
                   children: [
-                    _chipMacroGiay('P: 25g', VitaTrackTheme.mauNguyHiem),
+                    _chipMacroGiay('P: ${protein}g', VitaTrackTheme.mauNguyHiem),
                     const SizedBox(width: 8),
-                    _chipMacroGiay('C: 40g', VitaTrackTheme.mauCanhBao),
+                    _chipMacroGiay('C: ${carbs}g', VitaTrackTheme.mauCanhBao),
                     const SizedBox(width: 8),
-                    _chipMacroGiay('F: 12g', VitaTrackTheme.mauChinh),
+                    _chipMacroGiay('F: ${fat}g', VitaTrackTheme.mauChinh),
                   ],
                 ),
               ],

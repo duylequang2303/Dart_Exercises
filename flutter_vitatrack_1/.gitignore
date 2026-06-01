@@ -46,3 +46,6 @@ app.*.map.json
 
 # Environment variables (API keys - DO NOT COMMIT)
 .env
+
+# Android Logcat output files
+*_logcat.txt

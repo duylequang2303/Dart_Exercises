@@ -1,23 +1,25 @@
+import 'dart:async';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_vitatrack_1/services/mock_data_service.dart';
 import '../../domain/entities/health_metric.dart';
 import '../../data/datasources/pedometer_datasource.dart';
 
 class HealthNotifier extends StateNotifier<HealthMetric> {
   final PedometerDatasource _pedometer;
-  final MockDataService _mockSvc;
-  late final void Function() _mockListener;
+  Timer? _heartRateTimer;
+  final Random _random = Random();
 
-  HealthNotifier(this._pedometer, this._mockSvc)
-      : super(const HealthMetric(steps: 0, heartRate: 0, sleepHours: 0.0)) {
+  HealthNotifier(this._pedometer)
+      : super(const HealthMetric(steps: 0, heartRate: 72, sleepHours: 7.5)) {
     
-    // Vẫn dùng MockData cho nhịp tim vì Pedometer chỉ đếm bước
-    _mockListener = () {
-      state = state.copyWith(heartRate: _mockSvc.heartRate);
-    };
-    _mockSvc.addListener(_mockListener);
-    state = state.copyWith(heartRate: _mockSvc.heartRate);
+    // Giả lập biến động nhịp tim nhẹ sinh động từ 70 - 85 bpm
+    _heartRateTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      if (mounted) {
+        final newHeartRate = 70 + _random.nextInt(16);
+        state = state.copyWith(heartRate: newHeartRate);
+      }
+    });
 
     // Lắng nghe dữ liệu THẬT từ cảm biến đếm bước
     _pedometer.startListening(
@@ -32,7 +34,7 @@ class HealthNotifier extends StateNotifier<HealthMetric> {
 
   @override
   void dispose() {
-    _mockSvc.removeListener(_mockListener);
+    _heartRateTimer?.cancel();
     _pedometer.stopListening();
     super.dispose();
   }
@@ -44,6 +46,5 @@ final pedometerDatasourceProvider = Provider<PedometerDatasource>((ref) {
 
 final healthProvider = StateNotifierProvider<HealthNotifier, HealthMetric>((ref) {
   final pedometer = ref.watch(pedometerDatasourceProvider);
-  final mockSvc = MockDataService.instance;
-  return HealthNotifier(pedometer, mockSvc);
+  return HealthNotifier(pedometer);
 });

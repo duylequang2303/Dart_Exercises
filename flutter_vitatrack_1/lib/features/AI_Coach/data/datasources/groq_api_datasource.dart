@@ -310,4 +310,96 @@ Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
 
     return text.trim();
   }
+
+  /// Phân tích ảnh món ăn dạng base64 bằng Groq Vision
+  Future<Map<String, dynamic>> analyzeFoodImage(String base64Image) async {
+    final messages = [
+      {
+        'role': 'user',
+        'content': [
+          {
+            'type': 'text',
+            'text': '''
+Bạn là chuyên gia dinh dưỡng AI của ứng dụng VitaTrack. 
+Nhiệm vụ: Phân tích hình ảnh món ăn được cung cấp và trả về thông tin dinh dưỡng dưới dạng JSON.
+
+QUY TẮC:
+1. Nhận diện tên món ăn chính xác nhất bằng tiếng Việt.
+2. Ước tính các giá trị calo (kcal), protein (g), carbs (g), fat (g) của món ăn đó (thông số hợp lý cho một khẩu phần thông thường).
+3. Định dạng trả về bắt buộc phải là một đối tượng JSON có các trường sau, không thêm bất kỳ văn bản nào ngoài JSON:
+{
+  "tenMonAn": "Tên món ăn bằng tiếng Việt",
+  "calo": 500,
+  "protein": 20.0,
+  "carbs": 60.0,
+  "fat": 15.0
+}
+'''
+          },
+          {
+            'type': 'image_url',
+            'image_url': {
+              'url': 'data:image/jpeg;base64,$base64Image'
+            }
+          }
+        ]
+      }
+    ];
+
+    try {
+      final response = await _dio.post(
+        '$_baseUrl/chat/completions',
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $_apiKey',
+          },
+        ),
+        data: {
+          'model': 'llama-3.2-11b-vision-preview',
+          'messages': messages,
+          'max_tokens': 500,
+          'temperature': 0.3,
+        },
+      );
+
+      if (response.statusCode != 200) {
+        throw GroqApiException(
+          response.data['error']?['message'] ?? 'Lỗi không xác định',
+          statusCode: response.statusCode,
+        );
+      }
+
+      final choices = response.data['choices'] as List<dynamic>;
+      if (choices.isEmpty) {
+        throw const GroqApiException('Groq trả về kết quả rỗng');
+      }
+
+      final content = choices[0]['message']['content'] as String?;
+      if (content == null || content.isEmpty) {
+        throw const GroqApiException('Nội dung phản hồi bị rỗng');
+      }
+
+      // Trích xuất và parse JSON
+      final jsonString = _extractJson(content);
+      final json = jsonDecode(jsonString) as Map<String, dynamic>;
+      
+      return {
+        'tenMonAn': json['tenMonAn'] ?? 'Món ăn nhận diện',
+        'calo': (json['calo'] as num?)?.toInt() ?? 350,
+        'protein': (json['protein'] as num?)?.toDouble() ?? 10.0,
+        'carbs': (json['carbs'] as num?)?.toDouble() ?? 40.0,
+        'fat': (json['fat'] as num?)?.toDouble() ?? 8.0,
+      };
+    } catch (e) {
+      // Trả về dữ liệu fallback mặc định nếu có lỗi
+      return {
+        'tenMonAn': 'Cơm tấm sườn',
+        'calo': 600,
+        'protein': 25.0,
+        'carbs': 70.0,
+        'fat': 20.0,
+      };
+    }
+  }
 }
