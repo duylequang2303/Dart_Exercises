@@ -1,58 +1,54 @@
-/// Entity chứa toàn bộ dữ liệu sức khỏe của user
-/// để truyền vào AI làm context
 class UserHealthContext {
-  // ─── Từ Health ───────────────────────────────
   final int stepsToday;
-  final int dailyStepsGoal;
-  final int heartRateBpm;
-  final double sleepHours;
-
-  // ─── Từ Nutrition ────────────────────────────
   final int caloriesBurned;
-  final int dailyCaloriesGoal;
   final int waterIntakeMl;
+  final double sleepHours;
+  final int heartRateBpm;
+  final int dailyStepsGoal;
+  final int dailyCaloriesGoal;
   final int dailyWaterGoalMl;
+
+  // Thông tin profile từ onboarding
+  final String? mucTieu;   // Giảm cân / Giữ dáng / Tăng cơ
+  final String? gioiTinh;  // Nam / Nữ
+  final double? chieuCao;  // cm
+  final double? canNang;   // kg
+  final String? cuongDo;   // Ít vận động / Vừa phải / Năng động / Vận động viên
+  final int? tuoi;         // tuổi
+
+  // Macro dinh dưỡng hôm nay
   final double proteinGram;
   final double carbsGram;
   final double fatGram;
 
-  // ─── Từ Profile ──────────────────────────────
-  final int? tuoi;
-  final double? chieuCao;
-  final double? canNang;
-  final String? gioiTinh;
-  final String? mucTieu;
-  final String? cuongDo;
-
   const UserHealthContext({
     required this.stepsToday,
-    required this.dailyStepsGoal,
-    required this.heartRateBpm,
-    required this.sleepHours,
     required this.caloriesBurned,
-    required this.dailyCaloriesGoal,
     required this.waterIntakeMl,
+    required this.sleepHours,
+    required this.heartRateBpm,
+    required this.dailyStepsGoal,
+    required this.dailyCaloriesGoal,
     required this.dailyWaterGoalMl,
+    this.mucTieu,
+    this.gioiTinh,
+    this.chieuCao,
+    this.canNang,
+    this.cuongDo,
+    this.tuoi,
     this.proteinGram = 0,
     this.carbsGram = 0,
     this.fatGram = 0,
-    this.tuoi,
-    this.chieuCao,
-    this.canNang,
-    this.gioiTinh,
-    this.mucTieu,
-    this.cuongDo,
   });
 
-  /// Tính BMI từ chiều cao và cân nặng
+  // ── Computed getters ──────────────────────────────────────
+
   double? get bmi {
     if (chieuCao == null || canNang == null) return null;
-    if (chieuCao! <= 0) return null;
-    final heightM = chieuCao! / 100;
-    return canNang! / (heightM * heightM);
+    final h = chieuCao! / 100;
+    return canNang! / (h * h);
   }
 
-  /// Đánh giá BMI
   String get bmiCategory {
     final b = bmi;
     if (b == null) return 'Chưa có dữ liệu';
@@ -62,33 +58,32 @@ class UserHealthContext {
     return 'Béo phì';
   }
 
-  /// Chuyển thành chuỗi để đưa vào prompt AI
+  // ── Prompt cho AI ─────────────────────────────────────────
+
   String toPromptContext() {
-    final bmiText = bmi != null
-        ? '${bmi!.toStringAsFixed(1)} ($bmiCategory)'
-        : 'Chưa có dữ liệu';
+    final profileInfo = StringBuffer();
+
+    if (gioiTinh != null || canNang != null || chieuCao != null) {
+      profileInfo.writeln('\nThông tin cá nhân:');
+      if (gioiTinh != null) profileInfo.writeln('- Giới tính: $gioiTinh');
+      if (tuoi != null) profileInfo.writeln('- Tuổi: $tuoi');
+      if (chieuCao != null) profileInfo.writeln('- Chiều cao: ${chieuCao!.toInt()} cm');
+      if (canNang != null) profileInfo.writeln('- Cân nặng: ${canNang!.toInt()} kg');
+      if (bmi != null) profileInfo.writeln('- BMI: ${bmi!.toStringAsFixed(1)} ($bmiCategory)');
+    }
+
+    if (mucTieu != null) profileInfo.writeln('- Mục tiêu: $mucTieu');
+    if (cuongDo != null) profileInfo.writeln('- Mức độ vận động: $cuongDo');
 
     return '''
-THÔNG TIN CÁ NHÂN:
-- Tuổi: ${tuoi ?? 'Chưa có'}
-- Giới tính: ${gioiTinh ?? 'Chưa có'}
-- Chiều cao: ${chieuCao != null ? '${chieuCao}cm' : 'Chưa có'}
-- Cân nặng: ${canNang != null ? '${canNang}kg' : 'Chưa có'}
-- BMI: $bmiText
-- Mục tiêu: ${mucTieu ?? 'Chưa có'}
-- Cường độ tập: ${cuongDo ?? 'Chưa có'}
-
-SỨC KHỎE HÔM NAY:
+${profileInfo.toString()}
+Dữ liệu sức khỏe hôm nay:
 - Số bước: $stepsToday/$dailyStepsGoal bước
-- Nhịp tim: $heartRateBpm BPM
-- Giấc ngủ: $sleepHours giờ
-
-DINH DƯỠNG HÔM NAY:
-- Calories: $caloriesBurned/$dailyCaloriesGoal kcal
+- Calories nạp vào: $caloriesBurned/$dailyCaloriesGoal kcal
+- Protein: ${proteinGram.toStringAsFixed(0)}g | Carbs: ${carbsGram.toStringAsFixed(0)}g | Chất béo: ${fatGram.toStringAsFixed(0)}g
 - Nước uống: ${waterIntakeMl}ml/${dailyWaterGoalMl}ml
-- Protein: ${proteinGram}g
-- Carbs: ${carbsGram}g
-- Chất béo: ${fatGram}g
+- Giấc ngủ: $sleepHours giờ
+- Nhịp tim trung bình: $heartRateBpm BPM
 ''';
   }
 }

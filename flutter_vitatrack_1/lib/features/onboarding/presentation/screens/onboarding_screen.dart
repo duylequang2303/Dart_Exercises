@@ -194,16 +194,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           children: [
             const Text('Mục tiêu năng lượng hàng ngày:', style: TextStyle(color: VitaTrackTheme.mauChuPhu)),
             const SizedBox(height: 16),
-            const Text('2,150 kcal', style: TextStyle(color: VitaTrackTheme.mauChinh, fontSize: 40, fontWeight: FontWeight.bold)),
+            Text(
+              '${_formatNumber(state.caloriesGoal)} kcal',
+              style: const TextStyle(color: VitaTrackTheme.mauChinh, fontSize: 40, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 24),
             const Divider(color: VitaTrackTheme.mauCardNhat),
             const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _miniStat('Protein', '140g'),
-                _miniStat('Carbs', '250g'),
-                _miniStat('Chất béo', '70g'),
+                _miniStat('Protein', '${state.proteinGoal}g'),
+                _miniStat('Carbs', '${state.carbsGoal}g'),
+                _miniStat('Chất béo', '${state.fatGoal}g'),
               ],
             )
           ],
@@ -231,7 +234,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               _pageController.nextPage(duration: const Duration(milliseconds: 500), curve: Curves.easeOutCubic);
               
               if (state.currentPage == 3) {
-                await notifier.simulateAICalculation();
+                await notifier.calculateAndShowResult();
               }
             } else {
               final user = ref.read(nguoiDungHienTaiProvider);
@@ -345,6 +348,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ),
       ],
     );
+  }
+
+  String _formatNumber(int n) {
+    if (n >= 1000) {
+      final s = n.toString();
+      return '${s.substring(0, s.length - 3)},${s.substring(s.length - 3)}';
+    }
+    return n.toString();
   }
 
   Widget _miniStat(String label, String val) {

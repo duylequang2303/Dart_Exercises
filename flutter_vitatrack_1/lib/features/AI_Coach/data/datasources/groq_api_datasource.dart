@@ -29,21 +29,20 @@ class GroqApiDataSource {
   })  : _apiKey = apiKey,
         _dio = dio ?? Dio();
 
-  // ─── System Prompt cho Chat ───────────────────────────────
+  // ─── System Prompt ────────────────────────────────────────
 
   String _buildSystemPrompt(UserHealthContext context) {
     return '''
-Bạn là VitaTrack AI Coach - trợ lý sức khỏe thông minh, cá nhân hóa.
+Bạn là VitaTrack AI Coach - trợ lý sức khỏe thông minh.
 
 VAI TRÒ:
 - Tư vấn sức khỏe, tập luyện, dinh dưỡng và giấc ngủ
-- Phân tích dữ liệu và đưa ra lời khuyên PHÙ HỢP với thể trạng người dùng
+- Phân tích dữ liệu và đưa ra lời khuyên cá nhân hóa
 - Động viên người dùng đạt mục tiêu sức khỏe
 
 QUY TẮC:
 - Luôn trả lời bằng tiếng Việt, thân thiện và ngắn gọn
-- Dựa vào dữ liệu THỰC TẾ của người dùng để tư vấn
-- Tính đến tuổi, giới tính, BMI khi đưa ra lời khuyên
+- Dựa vào dữ liệu thực tế của người dùng để tư vấn
 - Không chẩn đoán bệnh
 
 ${context.toPromptContext()}
@@ -63,10 +62,7 @@ ${context.toPromptContext()}
       {'role': 'user', 'content': userMessage},
     ];
 
-    final responseText = await _callGroqApi(
-      messages: messages,
-      maxTokens: 500,
-    );
+    final responseText = await _callGroqApi(messages: messages, maxTokens: 500);
 
     return ChatMessageModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -78,77 +74,51 @@ ${context.toPromptContext()}
 
   // ─── Health Analysis ──────────────────────────────────────
 
-  Future<HealthAnalysisModel> getHealthAnalysis(
-      UserHealthContext context) async {
+  Future<HealthAnalysisModel> getHealthAnalysis(UserHealthContext context) async {
     final messages = [
       {
         'role': 'system',
         'content': '''
-Bạn là VitaTrack AI Coach - chuyên gia sức khỏe cá nhân hóa.
-Nhiệm vụ: Phân tích dữ liệu sức khỏe và trả về JSON CHÍNH XÁC.
-
-QUY TẮC QUAN TRỌNG:
-1. Chỉ đánh giá dựa trên dữ liệu THỰC TẾ được cung cấp
-2. Tính đến thể trạng cá nhân (tuổi, giới tính, BMI, mục tiêu)
-3. Hôm nay là ${_getTodayName()} - chỉ điền dữ liệu ngày đã qua, ngày chưa đến để 0
-4. diemTot và canCaiThien phải CỤ THỂ, dựa trên số liệu thực
-5. waterIntake và waterRemaining tính bằng LÍT (chia cho 1000)
-6. caloriesGoalPercent là phần trăm đạt được so với mục tiêu
+Bạn là VitaTrack AI Coach. Phân tích dữ liệu sức khỏe và trả về JSON.
 
 ${context.toPromptContext()}
 
-Trả về ĐÚNG JSON này, KHÔNG thêm text khác:
+Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
 {
-  "summary": "Nhận xét 2-3 câu cụ thể về phong độ hôm nay dựa trên dữ liệu thực tế",
-  "diemTot": [
-    "Điểm tốt cụ thể 1 kèm số liệu thực tế",
-    "Điểm tốt cụ thể 2 kèm số liệu thực tế"
-  ],
-  "canCaiThien": [
-    "Việc cần cải thiện 1 kèm gợi ý cụ thể",
-    "Việc cần cải thiện 2 kèm gợi ý cụ thể"
-  ],
-  "bmiDanhGia": "Đánh giá BMI và ý nghĩa với sức khỏe của người dùng",
-  "sleepQualityChange": 0,
-  "waterIntake": 0.0,
-  "waterRemaining": 0.0,
-  "caloriesBurned": 0,
-  "caloriesGoalPercent": 0,
+  "summary": "Nhận xét ngắn gọn 1-2 câu về phong độ tổng thể",
+  "sleepQualityChange": 15,
+  "waterIntake": 1.8,
+  "waterRemaining": 0.7,
+  "caloriesBurned": 450,
+  "caloriesGoalPercent": 65,
   "weeklyActivity": {
-    "T2": 0, "T3": 0, "T4": 0,
-    "T5": 0, "T6": 0, "T7": 0, "CN": 0
+    "T2": 80, "T3": 60, "T4": 90,
+    "T5": 45, "T6": 70, "T7": 85, "CN": 30
   }
 }
 ''',
       },
-      {
-        'role': 'user',
-        'content': 'Phân tích sức khỏe hôm nay của tôi.',
-      },
+      {'role': 'user', 'content': 'Phân tích dữ liệu sức khỏe hôm nay của tôi.'},
     ];
 
-    final responseText = await _callGroqApi(
-      messages: messages,
-      maxTokens: 1000,
-    );
+    final responseText = await _callGroqApi(messages: messages, maxTokens: 800);
     return _parseHealthAnalysis(responseText, context);
   }
 
-  HealthAnalysisModel _parseHealthAnalysis(
-      String responseText, UserHealthContext context) {
+  HealthAnalysisModel _parseHealthAnalysis(String responseText, UserHealthContext context) {
     try {
       final jsonString = _extractJson(responseText);
       final json = jsonDecode(jsonString) as Map<String, dynamic>;
       return HealthAnalysisModel.fromJson(json);
     } catch (e) {
+      // Fallback nếu AI không trả đúng JSON
       return HealthAnalysisModel.fallback(
         summaryText: responseText.length > 200
             ? responseText.substring(0, 200)
             : responseText,
         caloriesBurned: context.caloriesBurned,
         waterIntake: context.waterIntakeMl / 1000,
-        waterRemaining:
-            (context.dailyWaterGoalMl - context.waterIntakeMl) / 1000,
+        waterRemaining: (context.dailyWaterGoalMl - context.waterIntakeMl) / 1000,
       );
     }
   }
@@ -160,40 +130,29 @@ Trả về ĐÚNG JSON này, KHÔNG thêm text khác:
       {
         'role': 'system',
         'content': '''
-Bạn là VitaTrack AI Coach. Tạo kế hoạch sức khỏe CÁ NHÂN HÓA và trả về JSON.
-
-QUY TẮC:
-- Dựa vào mục tiêu, cường độ tập và thể trạng để tạo kế hoạch PHÙ HỢP
-- Task phải THỰC TẾ và KHẢ THI với người dùng
-- progressPercent dựa trên dữ liệu thực tế hôm nay
+Bạn là VitaTrack AI Coach. Tạo kế hoạch sức khỏe và trả về JSON.
 
 ${context.toPromptContext()}
 
 Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
 {
   "dailyTasks": [
-    {"id": "task_1", "title": "Task phù hợp với mục tiêu 1", "isCompleted": false},
-    {"id": "task_2", "title": "Task phù hợp với mục tiêu 2", "isCompleted": false},
-    {"id": "task_3", "title": "Task phù hợp với mục tiêu 3", "isCompleted": false},
-    {"id": "task_4", "title": "Task phù hợp với mục tiêu 4", "isCompleted": false}
+    {"id": "task_1", "title": "Uống 2L nước", "isCompleted": false},
+    {"id": "task_2", "title": "Đi bộ 10,000 bước", "isCompleted": false},
+    {"id": "task_3", "title": "Tập yoga 20 phút", "isCompleted": false},
+    {"id": "task_4", "title": "Ngủ trước 23h", "isCompleted": false}
   ],
   "weeklyGoals": [
-    {"id": "goal_1", "title": "Mục tiêu tuần phù hợp 1", "progressPercent": 0},
-    {"id": "goal_2", "title": "Mục tiêu tuần phù hợp 2", "progressPercent": 0}
+    {"id": "goal_1", "title": "Giảm 0.5kg", "progressPercent": 60},
+    {"id": "goal_2", "title": "Tập 5 ngày/tuần", "progressPercent": 80}
   ]
 }
 ''',
       },
-      {
-        'role': 'user',
-        'content': 'Tạo kế hoạch phù hợp với thể trạng và mục tiêu của tôi.',
-      },
+      {'role': 'user', 'content': 'Tạo kế hoạch phù hợp với tình trạng của tôi.'},
     ];
 
-    final responseText = await _callGroqApi(
-      messages: messages,
-      maxTokens: 600,
-    );
+    final responseText = await _callGroqApi(messages: messages, maxTokens: 600);
     return _parseCoachPlan(responseText);
   }
 
@@ -203,6 +162,7 @@ Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
       final json = jsonDecode(jsonString) as Map<String, dynamic>;
       return CoachPlanModel.fromJson(json);
     } catch (e) {
+      // Fallback kế hoạch mặc định nếu parse thất bại
       return CoachPlanModel.fromJson({
         'dailyTasks': [
           {'id': 'task_1', 'title': 'Uống 2L nước', 'isCompleted': false},
@@ -211,13 +171,89 @@ Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
           {'id': 'task_4', 'title': 'Ngủ trước 23h', 'isCompleted': false},
         ],
         'weeklyGoals': [
-          {
-            'id': 'goal_1',
-            'title': 'Duy trì thói quen tốt',
-            'progressPercent': 50
-          },
+          {'id': 'goal_1', 'title': 'Duy trì thói quen tốt', 'progressPercent': 50},
         ],
       });
+    }
+  }
+
+  // ─── Food Image Analysis ──────────────────────────────────
+
+  Future<Map<String, dynamic>> analyzeFoodImage(String base64Image) async {
+    const visionModel = 'meta-llama/llama-4-scout-17b-16e-instruct';
+
+    final messages = [
+      {
+        'role': 'user',
+        'content': [
+          {
+            'type': 'image_url',
+            'image_url': {
+              'url': 'data:image/jpeg;base64,$base64Image',
+            },
+          },
+          {
+            'type': 'text',
+            'text': '''Phân tích món ăn trong ảnh và trả về JSON.
+Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
+{
+  "tenMonAn": "Tên món ăn",
+  "calo": 350,
+  "protein": 15.0,
+  "carbs": 40.0,
+  "fat": 10.0
+}
+Ước tính cho 1 khẩu phần thông thường (gram). Nếu không nhận ra món ăn, vẫn ước tính dựa trên những gì thấy trong ảnh.''',
+          },
+        ],
+      },
+    ];
+
+    try {
+      final response = await _dio.post(
+        '$_baseUrl/chat/completions',
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $_apiKey',
+          },
+        ),
+        data: {
+          'model': visionModel,
+          'messages': messages,
+          'max_tokens': 300,
+          'temperature': 0.3,
+        },
+      );
+
+      if (response.statusCode != 200) {
+        throw GroqApiException(
+          response.data['error']?['message'] ?? 'Lỗi phân tích ảnh',
+          statusCode: response.statusCode,
+        );
+      }
+
+      final choices = response.data['choices'] as List<dynamic>;
+      if (choices.isEmpty) throw const GroqApiException('Không có kết quả phân tích');
+
+      final content = choices[0]['message']['content'] as String? ?? '';
+      final jsonString = _extractJson(content);
+      final json = jsonDecode(jsonString) as Map<String, dynamic>;
+
+      return {
+        'tenMonAn': json['tenMonAn'] ?? 'Món ăn',
+        'calo': (json['calo'] as num?)?.toInt() ?? 0,
+        'protein': (json['protein'] as num?)?.toDouble() ?? 0.0,
+        'carbs': (json['carbs'] as num?)?.toDouble() ?? 0.0,
+        'fat': (json['fat'] as num?)?.toDouble() ?? 0.0,
+      };
+    } on DioException catch (e) {
+      throw GroqApiException(
+        e.response?.data['error']?['message'] ?? e.message ?? 'Lỗi kết nối',
+        statusCode: e.response?.statusCode,
+      );
+    } catch (e) {
+      throw GroqApiException('Lỗi phân tích ảnh: ${e.toString()}');
     }
   }
 
@@ -252,9 +288,8 @@ Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
       }
 
       final choices = response.data['choices'] as List<dynamic>;
-      if (choices.isEmpty) {
-        throw const GroqApiException('Groq trả về kết quả rỗng');
-      }
+
+      if (choices.isEmpty) throw const GroqApiException('Groq trả về kết quả rỗng');
 
       final content = choices[0]['message']['content'] as String?;
       if (content == null || content.isEmpty) {
@@ -264,35 +299,18 @@ Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
       return content;
     } on DioException catch (e) {
       throw GroqApiException(
-        e.response?.data['error']?['message'] ??
-            e.message ??
-            'Lỗi kết nối Dio',
+        e.response?.data['error']?['message'] ?? e.message ?? 'Lỗi kết nối Dio',
         statusCode: e.response?.statusCode,
       );
     } catch (e) {
-      if (e is GroqApiException) rethrow;
       throw GroqApiException('Lỗi không xác định: ${e.toString()}');
     }
   }
 
-  // ─── Helpers ──────────────────────────────────────────────
-
-  /// Lấy tên ngày hôm nay bằng tiếng Việt
-  String _getTodayName() {
-    final weekday = DateTime.now().weekday;
-    const days = {
-      1: 'T2 (Thứ Hai)',
-      2: 'T3 (Thứ Ba)',
-      3: 'T4 (Thứ Tư)',
-      4: 'T5 (Thứ Năm)',
-      5: 'T6 (Thứ Sáu)',
-      6: 'T7 (Thứ Bảy)',
-      7: 'CN (Chủ Nhật)',
-    };
-    return days[weekday] ?? 'T2';
-  }
+  // ─── Helper ───────────────────────────────────────────────
 
   /// Trích xuất JSON thuần từ response
+  /// AI đôi khi bọc JSON trong ```json ... ```
   String _extractJson(String text) {
     final jsonBlockRegex = RegExp(r'```json\s*([\s\S]*?)\s*```');
     final match = jsonBlockRegex.firstMatch(text);
@@ -309,97 +327,5 @@ Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
     }
 
     return text.trim();
-  }
-
-  /// Phân tích ảnh món ăn dạng base64 bằng Groq Vision
-  Future<Map<String, dynamic>> analyzeFoodImage(String base64Image) async {
-    final messages = [
-      {
-        'role': 'user',
-        'content': [
-          {
-            'type': 'text',
-            'text': '''
-Bạn là chuyên gia dinh dưỡng AI của ứng dụng VitaTrack. 
-Nhiệm vụ: Phân tích hình ảnh món ăn được cung cấp và trả về thông tin dinh dưỡng dưới dạng JSON.
-
-QUY TẮC:
-1. Nhận diện tên món ăn chính xác nhất bằng tiếng Việt.
-2. Ước tính các giá trị calo (kcal), protein (g), carbs (g), fat (g) của món ăn đó (thông số hợp lý cho một khẩu phần thông thường).
-3. Định dạng trả về bắt buộc phải là một đối tượng JSON có các trường sau, không thêm bất kỳ văn bản nào ngoài JSON:
-{
-  "tenMonAn": "Tên món ăn bằng tiếng Việt",
-  "calo": 500,
-  "protein": 20.0,
-  "carbs": 60.0,
-  "fat": 15.0
-}
-'''
-          },
-          {
-            'type': 'image_url',
-            'image_url': {
-              'url': 'data:image/jpeg;base64,$base64Image'
-            }
-          }
-        ]
-      }
-    ];
-
-    try {
-      final response = await _dio.post(
-        '$_baseUrl/chat/completions',
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $_apiKey',
-          },
-        ),
-        data: {
-          'model': 'llama-3.2-11b-vision-preview',
-          'messages': messages,
-          'max_tokens': 500,
-          'temperature': 0.3,
-        },
-      );
-
-      if (response.statusCode != 200) {
-        throw GroqApiException(
-          response.data['error']?['message'] ?? 'Lỗi không xác định',
-          statusCode: response.statusCode,
-        );
-      }
-
-      final choices = response.data['choices'] as List<dynamic>;
-      if (choices.isEmpty) {
-        throw const GroqApiException('Groq trả về kết quả rỗng');
-      }
-
-      final content = choices[0]['message']['content'] as String?;
-      if (content == null || content.isEmpty) {
-        throw const GroqApiException('Nội dung phản hồi bị rỗng');
-      }
-
-      // Trích xuất và parse JSON
-      final jsonString = _extractJson(content);
-      final json = jsonDecode(jsonString) as Map<String, dynamic>;
-      
-      return {
-        'tenMonAn': json['tenMonAn'] ?? 'Món ăn nhận diện',
-        'calo': (json['calo'] as num?)?.toInt() ?? 350,
-        'protein': (json['protein'] as num?)?.toDouble() ?? 10.0,
-        'carbs': (json['carbs'] as num?)?.toDouble() ?? 40.0,
-        'fat': (json['fat'] as num?)?.toDouble() ?? 8.0,
-      };
-    } catch (e) {
-      // Trả về dữ liệu fallback mặc định nếu có lỗi
-      return {
-        'tenMonAn': 'Cơm tấm sườn',
-        'calo': 600,
-        'protein': 25.0,
-        'carbs': 70.0,
-        'fat': 20.0,
-      };
-    }
   }
 }
