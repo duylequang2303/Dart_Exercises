@@ -1,0 +1,37 @@
+[
+  {
+    "eventType": "VIEW_TEXT_CHANGED",
+    "elementDescriptors": [
+      {
+        "focused": true
+      },
+      {
+        "description": "Email"
+      },
+      {
+        "text": "Email"
+      }
+    ],
+    "text": "duy@gmail.com"
+  },
+  {
+    "eventType": "VIEW_TEXT_CHANGED",
+    "elementDescriptors": [
+      {
+        "description": "Mật khẩu"
+      },
+      {
+        "text": "Mật khẩu"
+      }
+    ],
+    "text": "123456"
+  },
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [
+      {
+        "text": "Đăng nhập"
+      }
+    ]
+  }
+]
