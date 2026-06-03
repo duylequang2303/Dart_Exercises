@@ -4,43 +4,29 @@ import '../../domain/entities/user_health_context.dart';
 import '../models/chat_message_model.dart';
 import '../models/health_analysis_model.dart';
 import '../models/coach_plan_model.dart';
-import 'gemini_api_datasource.dart';
 
-/// Exception riêng cho lỗi Groq API
-class GroqApiException implements Exception {
+/// Exception riêng cho lỗi Gemini API
+class GeminiApiException implements Exception {
   final String message;
   final int? statusCode;
-  const GroqApiException(this.message, {this.statusCode});
+  const GeminiApiException(this.message, {this.statusCode});
 
   @override
-  String toString() => 'GroqApiException: $message (status: $statusCode)';
+  String toString() => 'GeminiApiException: $message (status: $statusCode)';
 }
 
-/// Đây là nơi DUY NHẤT được phép gọi Groq API
-class GroqApiDataSource {
-  static const String _baseUrl = 'https://api.groq.com/openai/v1';
-  static const String _model = 'llama-3.3-70b-versatile';
-
+class GeminiApiDataSource {
   final String _apiKey;
+  final String _model;
   final Dio _dio;
-  final GeminiApiDataSource? _geminiDataSource;
 
-  GroqApiDataSource({
+  GeminiApiDataSource({
     required String apiKey,
-    String? geminiApiKey,
-    String? geminiModel,
+    required String model,
     Dio? dio,
   })  : _apiKey = apiKey,
-        _dio = dio ?? Dio(),
-        _geminiDataSource = (geminiApiKey != null && geminiApiKey.isNotEmpty)
-            ? GeminiApiDataSource(
-                apiKey: geminiApiKey,
-                model: geminiModel ?? 'gemini-2.5-flash',
-                dio: dio,
-              )
-            : null;
-
-  // ─── System Prompt ────────────────────────────────────────
+        _model = model,
+        _dio = dio ?? Dio();
 
   String _buildSystemPrompt(UserHealthContext context) {
     return '''
@@ -67,26 +53,37 @@ ${context.toPromptContext()}
     required List<ChatMessageModel> history,
     required UserHealthContext context,
   }) async {
-    if (_geminiDataSource != null) {
-      try {
-        print('Using Gemini for chat message...');
-        return await _geminiDataSource.sendChatMessage(
-          userMessage: userMessage,
-          history: history,
-          context: context,
-        );
-      } catch (e) {
-        print('Gemini chat failed, falling back to Groq: $e');
-      }
+    // Gemini roles: user, model
+    final contents = <Map<String, dynamic>>[];
+
+    for (final msg in history) {
+      contents.add({
+        'role': msg.isUser ? 'user' : 'model',
+        'parts': [
+          {'text': msg.content}
+        ]
+      });
     }
 
-    final messages = [
-      {'role': 'system', 'content': _buildSystemPrompt(context)},
-      ...history.map((msg) => msg.toGroqMessage()),
-      {'role': 'user', 'content': userMessage},
-    ];
+    // Add current user message
+    contents.add({
+      'role': 'user',
+      'parts': [
+        {'text': userMessage}
+      ]
+    });
 
-    final responseText = await _callGroqApi(messages: messages, maxTokens: 500);
+    final systemInstruction = {
+      'parts': [
+        {'text': _buildSystemPrompt(context)}
+      ]
+    };
+
+    final responseText = await _callGeminiApi(
+      contents: contents,
+      systemInstruction: systemInstruction,
+      maxTokens: 1000,
+    );
 
     return ChatMessageModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -99,19 +96,7 @@ ${context.toPromptContext()}
   // ─── Health Analysis ──────────────────────────────────────
 
   Future<HealthAnalysisModel> getHealthAnalysis(UserHealthContext context) async {
-    if (_geminiDataSource != null) {
-      try {
-        print('Using Gemini for health analysis...');
-        return await _geminiDataSource.getHealthAnalysis(context);
-      } catch (e) {
-        print('Gemini health analysis failed, falling back to Groq: $e');
-      }
-    }
-
-    final messages = [
-      {
-        'role': 'system',
-        'content': '''
+    final systemPrompt = '''
 Bạn là VitaTrack AI Coach. Phân tích dữ liệu sức khỏe và trả về JSON.
 
 ${context.toPromptContext()}
@@ -129,12 +114,30 @@ Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
     "T5": 45, "T6": 70, "T7": 85, "CN": 30
   }
 }
-''',
-      },
-      {'role': 'user', 'content': 'Phân tích dữ liệu sức khỏe hôm nay của tôi.'},
+''';
+
+    final contents = [
+      {
+        'role': 'user',
+        'parts': [
+          {'text': 'Phân tích dữ liệu sức khỏe hôm nay của tôi.'}
+        ]
+      }
     ];
 
-    final responseText = await _callGroqApi(messages: messages, maxTokens: 800);
+    final systemInstruction = {
+      'parts': [
+        {'text': systemPrompt}
+      ]
+    };
+
+    final responseText = await _callGeminiApi(
+      contents: contents,
+      systemInstruction: systemInstruction,
+      maxTokens: 1000,
+      jsonMode: true,
+    );
+
     return _parseHealthAnalysis(responseText, context);
   }
 
@@ -144,7 +147,6 @@ Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
       final json = jsonDecode(jsonString) as Map<String, dynamic>;
       return HealthAnalysisModel.fromJson(json);
     } catch (e) {
-      // Fallback nếu AI không trả đúng JSON
       return HealthAnalysisModel.fallback(
         summaryText: responseText.length > 200
             ? responseText.substring(0, 200)
@@ -159,19 +161,7 @@ Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
   // ─── Coach Plan ───────────────────────────────────────────
 
   Future<CoachPlanModel> getCoachPlan(UserHealthContext context) async {
-    if (_geminiDataSource != null) {
-      try {
-        print('Using Gemini for coach plan...');
-        return await _geminiDataSource.getCoachPlan(context);
-      } catch (e) {
-        print('Gemini coach plan failed, falling back to Groq: $e');
-      }
-    }
-
-    final messages = [
-      {
-        'role': 'system',
-        'content': '''
+    final systemPrompt = '''
 Bạn là VitaTrack AI Coach. Tạo kế hoạch sức khỏe và trả về JSON.
 
 ${context.toPromptContext()}
@@ -189,12 +179,30 @@ Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
     {"id": "goal_2", "title": "Tập 5 ngày/tuần", "progressPercent": 80}
   ]
 }
-''',
-      },
-      {'role': 'user', 'content': 'Tạo kế hoạch phù hợp với tình trạng của tôi.'},
+''';
+
+    final contents = [
+      {
+        'role': 'user',
+        'parts': [
+          {'text': 'Tạo kế hoạch phù hợp với tình trạng của tôi.'}
+        ]
+      }
     ];
 
-    final responseText = await _callGroqApi(messages: messages, maxTokens: 600);
+    final systemInstruction = {
+      'parts': [
+        {'text': systemPrompt}
+      ]
+    };
+
+    final responseText = await _callGeminiApi(
+      contents: contents,
+      systemInstruction: systemInstruction,
+      maxTokens: 1000,
+      jsonMode: true,
+    );
+
     return _parseCoachPlan(responseText);
   }
 
@@ -204,7 +212,6 @@ Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
       final json = jsonDecode(jsonString) as Map<String, dynamic>;
       return CoachPlanModel.fromJson(json);
     } catch (e) {
-      // Fallback kế hoạch mặc định nếu parse thất bại
       return CoachPlanModel.fromJson({
         'dailyTasks': [
           {'id': 'task_1', 'title': 'Uống 2L nước', 'isCompleted': false},
@@ -222,29 +229,16 @@ Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
   // ─── Food Image Analysis ──────────────────────────────────
 
   Future<Map<String, dynamic>> analyzeFoodImage(String base64Image) async {
-    if (_geminiDataSource != null) {
-      try {
-        print('Using Gemini for food image analysis...');
-        return await _geminiDataSource.analyzeFoodImage(base64Image);
-      } catch (e) {
-        print('Gemini food image analysis failed, falling back to Groq: $e');
-      }
-    }
-
-    const visionModel = 'llama-3.2-11b-vision-preview';
-
-    final messages = [
+    final contents = [
       {
-        'role': 'user',
-        'content': [
+        'parts': [
           {
-            'type': 'image_url',
-            'image_url': {
-              'url': 'data:image/jpeg;base64,$base64Image',
-            },
+            'inlineData': {
+              'mimeType': 'image/jpeg',
+              'data': base64Image,
+            }
           },
           {
-            'type': 'text',
             'text': '''Phân tích món ăn trong ảnh và trả về JSON.
 Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
 {
@@ -254,41 +248,20 @@ Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
   "carbs": 40.0,
   "fat": 10.0
 }
-Ước tính cho 1 khẩu phần thông thường (gram). Nếu không nhận ra món ăn, vẫn ước tính dựa trên những gì thấy trong ảnh.''',
-          },
-        ],
-      },
+Ước tính cho 1 khẩu phần thông thường (gram). Nếu không nhận ra món ăn, vẫn ước tính dựa trên những gì thấy trong ảnh.'''
+          }
+        ]
+      }
     ];
 
     try {
-      final response = await _dio.post(
-        '$_baseUrl/chat/completions',
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $_apiKey',
-          },
-        ),
-        data: {
-          'model': visionModel,
-          'messages': messages,
-          'max_tokens': 300,
-          'temperature': 0.3,
-        },
+      final responseText = await _callGeminiApi(
+        contents: contents,
+        maxTokens: 500,
+        jsonMode: true,
       );
 
-      if (response.statusCode != 200) {
-        throw GroqApiException(
-          response.data['error']?['message'] ?? 'Lỗi phân tích ảnh',
-          statusCode: response.statusCode,
-        );
-      }
-
-      final choices = response.data['choices'] as List<dynamic>;
-      if (choices.isEmpty) throw const GroqApiException('Không có kết quả phân tích');
-
-      final content = choices[0]['message']['content'] as String? ?? '';
-      final jsonString = _extractJson(content);
+      final jsonString = _extractJson(responseText);
       final json = jsonDecode(jsonString) as Map<String, dynamic>;
 
       return {
@@ -298,70 +271,80 @@ Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
         'carbs': (json['carbs'] as num?)?.toDouble() ?? 0.0,
         'fat': (json['fat'] as num?)?.toDouble() ?? 0.0,
       };
-    } on DioException catch (e) {
-      throw GroqApiException(
-        e.response?.data['error']?['message'] ?? e.message ?? 'Lỗi kết nối',
-        statusCode: e.response?.statusCode,
-      );
     } catch (e) {
-      throw GroqApiException('Lỗi phân tích ảnh: ${e.toString()}');
+      throw GeminiApiException('Lỗi phân tích ảnh với Gemini: ${e.toString()}');
     }
   }
 
   // ─── Core API call ────────────────────────────────────────
 
-  Future<String> _callGroqApi({
-    required List<Map<String, dynamic>> messages,
-    int maxTokens = 500,
+  Future<String> _callGeminiApi({
+    required List<Map<String, dynamic>> contents,
+    Map<String, dynamic>? systemInstruction,
+    int maxTokens = 1000,
+    bool jsonMode = false,
   }) async {
+    final url = 'https://generativelanguage.googleapis.com/v1beta/models/$_model:generateContent?key=$_apiKey';
+
+    final requestData = <String, dynamic>{
+      'contents': contents,
+      'generationConfig': {
+        'temperature': 0.3,
+        'maxOutputTokens': maxTokens,
+        if (jsonMode) 'responseMimeType': 'application/json',
+      },
+    };
+
+    if (systemInstruction != null) {
+      requestData['systemInstruction'] = systemInstruction;
+    }
+
     try {
       final response = await _dio.post(
-        '$_baseUrl/chat/completions',
+        url,
         options: Options(
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer $_apiKey',
           },
         ),
-        data: {
-          'model': _model,
-          'messages': messages,
-          'max_tokens': maxTokens,
-          'temperature': 0.7,
-        },
+        data: requestData,
       );
 
       if (response.statusCode != 200) {
-        throw GroqApiException(
-          response.data['error']?['message'] ?? 'Lỗi không xác định',
+        throw GeminiApiException(
+          response.data['error']?['message'] ?? 'Lỗi không xác định từ Gemini',
           statusCode: response.statusCode,
         );
       }
 
-      final choices = response.data['choices'] as List<dynamic>;
-
-      if (choices.isEmpty) throw const GroqApiException('Groq trả về kết quả rỗng');
-
-      final content = choices[0]['message']['content'] as String?;
-      if (content == null || content.isEmpty) {
-        throw const GroqApiException('Nội dung phản hồi bị rỗng');
+      final candidates = response.data['candidates'] as List<dynamic>?;
+      if (candidates == null || candidates.isEmpty) {
+        throw const GeminiApiException('Gemini trả về danh sách ứng viên trống');
       }
 
-      return content;
+      final parts = candidates[0]['content']?['parts'] as List<dynamic>?;
+      if (parts == null || parts.isEmpty) {
+        throw const GeminiApiException('Gemini trả về content/parts trống');
+      }
+
+      final text = parts[0]['text'] as String?;
+      if (text == null || text.isEmpty) {
+        throw const GeminiApiException('Nội dung phản hồi từ Gemini bị rỗng');
+      }
+
+      return text;
     } on DioException catch (e) {
-      throw GroqApiException(
-        e.response?.data['error']?['message'] ?? e.message ?? 'Lỗi kết nối Dio',
+      throw GeminiApiException(
+        e.response?.data['error']?['message'] ?? e.message ?? 'Lỗi kết nối Dio đến Gemini',
         statusCode: e.response?.statusCode,
       );
     } catch (e) {
-      throw GroqApiException('Lỗi không xác định: ${e.toString()}');
+      throw GeminiApiException('Lỗi gọi Gemini API: ${e.toString()}');
     }
   }
 
   // ─── Helper ───────────────────────────────────────────────
 
-  /// Trích xuất JSON thuần từ response
-  /// AI đôi khi bọc JSON trong ```json ... ```
   String _extractJson(String text) {
     final jsonBlockRegex = RegExp(r'```json\s*([\s\S]*?)\s*```');
     final match = jsonBlockRegex.firstMatch(text);

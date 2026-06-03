@@ -13,9 +13,17 @@ import '../../domain/usecases/get_coach_plan_usecase.dart';
 import '../../domain/usecases/update_task_completion_usecase.dart';
 import '../../domain/usecases/get_chat_history_usecase.dart';
 
-// ─── Groq API Key ─────────────────────────────────────────────
+// ─── Groq & Gemini API Keys ───────────────────────────────────
 
-final String kGroqApiKey = dotenv.env['GROQ_API_KEY'] ?? '';
+final String kGroqApiKey = (dotenv.env['GROQ_API_KEY']?.isNotEmpty == true)
+    ? dotenv.env['GROQ_API_KEY']!
+    : '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';
+final String kGeminiApiKey = (dotenv.env['GEMINI_API_KEY']?.isNotEmpty == true)
+    ? dotenv.env['GEMINI_API_KEY']!
+    : 'AIzaSyD1DMq-uj6t_kbPgPZYywA4C_fN9RW5blM';
+final String kGeminiModel = (dotenv.env['GEMINI_MODEL']?.isNotEmpty == true)
+    ? dotenv.env['GEMINI_MODEL']!
+    : 'gemini-2.5-flash';
 
 // ─── Infrastructure ───────────────────────────────────────────
 
@@ -32,6 +40,8 @@ final dioProvider = Provider<Dio>((ref) {
 final groqApiDataSourceProvider = Provider<GroqApiDataSource>((ref) {
   return GroqApiDataSource(
     apiKey: kGroqApiKey,
+    geminiApiKey: kGeminiApiKey,
+    geminiModel: kGeminiModel,
     dio: ref.watch(dioProvider),
   );
 });

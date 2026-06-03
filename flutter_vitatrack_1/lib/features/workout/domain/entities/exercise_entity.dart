@@ -5,7 +5,8 @@ class ExerciseEntity {
   final String name;
   final int sets;
   final int reps;
-  final Duration duration; // expected duration for this exercise
+  final Duration duration;
+  final int restSeconds;
 
   const ExerciseEntity({
     required this.id,
@@ -13,6 +14,7 @@ class ExerciseEntity {
     this.sets = 0,
     this.reps = 0,
     required this.duration,
+    this.restSeconds = 45,
   });
 
   ExerciseEntity copyWith({
@@ -21,6 +23,7 @@ class ExerciseEntity {
     int? sets,
     int? reps,
     Duration? duration,
+    int? restSeconds,
   }) {
     return ExerciseEntity(
       id: id ?? this.id,
@@ -28,6 +31,7 @@ class ExerciseEntity {
       sets: sets ?? this.sets,
       reps: reps ?? this.reps,
       duration: duration ?? this.duration,
+      restSeconds: restSeconds ?? this.restSeconds,
     );
   }
 }

@@ -7,11 +7,11 @@ class FoodApiDataSource {
   // Inject Dio qua constructor theo yêu cầu
   FoodApiDataSource(this._dio);
 
-  Future<List<FoodEntity>> searchFood(String query) async {
+  Future<List<FoodEntity>> searchFood(String query, {CancelToken? cancelToken}) async {
     final url = 'https://world.openfoodfacts.org/cgi/search.pl?search_terms=$query&json=true&page_size=20';
     
     try {
-      final response = await _dio.get(url);
+      final response = await _dio.get(url, cancelToken: cancelToken);
       if (response.statusCode == 200) {
         final List products = response.data['products'] ?? [];
         
@@ -22,8 +22,11 @@ class FoodApiDataSource {
             .toList();
       }
       return [];
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.cancel) rethrow; // Để provider xử lý cancel
+      return [];
     } catch (e) {
       return [];
     }
   }
-}
+}

@@ -237,65 +237,91 @@ class HomeScreen extends ConsumerWidget {
                     const SizedBox(height: 40), 
                     
                     // Các ngày trong tuần
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _taoNgayTrongTuan('T2', false),
-                        _taoNgayTrongTuan('T3', false),
-                        _taoNgayTrongTuan('T4', false),
-                        _taoNgayTrongTuan('T5', false),
-                        _taoNgayTrongTuan('T6', true), // Ngày đang chọn
-                        _taoNgayTrongTuan('T7', false),
-                        _taoNgayTrongTuan('CN', false),
-                      ],
-                    ),
+                    Builder(builder: (context) {
+                      final today = DateTime.now().weekday; // 1=T2, 2=T3, ... 7=CN
+                      final days = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: List.generate(7, (i) => _taoNgayTrongTuan(days[i], today == i + 1)),
+                      );
+                    }),
                   ],
                 ),
               ),
               const SizedBox(height: 32),
 
               // ===== CARD GỢI Ý AI =====
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: VitaTrackTheme.mauCardNhat.withValues(alpha: 0.5), 
-                  borderRadius: BorderRadius.circular(VitaTrackTheme.boGocLon),
-                  border: Border.all(color: VitaTrackTheme.mauChinh.withValues(alpha: 0.3)),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: VitaTrackTheme.mauChinh.withValues(alpha: 0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.bolt, color: VitaTrackTheme.mauChinh),
+              Builder(
+                builder: (context) {
+                  final steps = health.steps;
+                  final calories = nutrition.caloDaNap;
+                  final waterCups = nutrition.soLyNuoc;
+                  
+                  String dynamicAiSuggestion = '';
+                  if (steps < 3000) {
+                    dynamicAiSuggestion = 'Bạn mới đi được $steps bước hôm nay. Hãy đứng dậy đi bộ nhẹ nhàng 10 phút để nạp lại năng lượng nhé!';
+                  } else if (steps < 10000) {
+                    final thieu = 10000 - steps;
+                    dynamicAiSuggestion = 'Bạn đã đi được $steps bước rồi, còn thiếu $thieu bước nữa để đạt mục tiêu 10,000 bước. Cố lên nhé!';
+                  } else {
+                    dynamicAiSuggestion = 'Tuyệt vời! Bạn đã đi được $steps bước, vượt mục tiêu sức khỏe hàng ngày rồi. Tiếp tục duy trì nhé!';
+                  }
+                  
+                  if (calories > 2200) {
+                    dynamicAiSuggestion += ' Hôm nay bạn đã nạp $calories kcal (khá nhiều), hãy ưu tiên ăn nhẹ và uống nhiều nước.';
+                  } else if (calories < 1200 && calories > 0) {
+                    dynamicAiSuggestion += ' Lượng calo nạp vào hơi ít ($calories kcal), hãy nhớ ăn uống đầy đủ dưỡng chất nhé.';
+                  }
+                  
+                  if (waterCups < 4) {
+                    dynamicAiSuggestion += ' Bạn mới uống $waterCups ly nước. Hãy uống thêm một ly nước 250ml ngay nào.';
+                  } else {
+                    dynamicAiSuggestion += ' Chỉ số nước uống rất tốt ($waterCups ly). Hãy giữ vững thói quen này nhé.';
+                  }
+
+                  return Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: VitaTrackTheme.mauCardNhat.withValues(alpha: 0.5), 
+                      borderRadius: BorderRadius.circular(VitaTrackTheme.boGocLon),
+                      border: Border.all(color: VitaTrackTheme.mauChinh.withValues(alpha: 0.3)),
                     ),
-                    const SizedBox(width: 16),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Gợi ý từ AI Coach',
-                            style: TextStyle(
-                              color: VitaTrackTheme.mauChu,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: VitaTrackTheme.mauChinh.withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
                           ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Bạn đã đạt 85% mục tiêu bước chân! Chỉ cần thêm 1,766 bước nữa để hoàn thành. Đi bộ 15 phút sau bữa tối sẽ giúp bạn đạt được mục tiêu.',
-                            style: TextStyle(color: VitaTrackTheme.mauChuPhu, height: 1.5),
+                          child: const Icon(Icons.bolt, color: VitaTrackTheme.mauChinh),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Gợi ý từ AI Coach',
+                                style: TextStyle(
+                                  color: VitaTrackTheme.mauChu,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                dynamicAiSuggestion,
+                                style: const TextStyle(color: VitaTrackTheme.mauChuPhu, height: 1.5),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  );
+                }
               ),
               const SizedBox(height: 80), 
             ],

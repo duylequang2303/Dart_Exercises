@@ -8,10 +8,20 @@ import 'package:flutter_vitatrack_1/features/workout/domain/usecases/track_worko
 import 'package:flutter_vitatrack_1/features/workout/domain/repositories/workout_repository.dart';
 import 'package:flutter_vitatrack_1/features/workout/data/datasources/workout_local_datasource.dart';
 import 'package:flutter_vitatrack_1/features/workout/data/repositories/workout_repository_impl.dart';
+import 'package:flutter_vitatrack_1/features/AI_Coach/presentation/providers/ai_coach_dependencies_provider.dart';
+import 'package:flutter_vitatrack_1/features/workout/data/services/workout_ai_service.dart';
+import 'package:flutter_vitatrack_1/features/workout/domain/entities/exercise_entity.dart';
 
 final workoutLocalDataSourceProvider = Provider<WorkoutLocalDataSource>((ref) => WorkoutLocalDataSource());
 
 final workoutRepositoryProvider = Provider<WorkoutRepository>((ref) => WorkoutRepositoryImpl(localDataSource: ref.read(workoutLocalDataSourceProvider)));
+
+final workoutAiServiceProvider = Provider<WorkoutAiService>((ref) {
+  return WorkoutAiService(
+    apiKey: kGeminiApiKey,
+    model: kGeminiModel,
+  );
+});
 
 final workoutTimerServiceProvider = Provider<WorkoutTimerService>((ref) {
   final s = WorkoutTimerService();
@@ -58,9 +68,24 @@ class WorkoutTimerNotifier extends StateNotifier<Duration> {
     _service.start();
   }
 
-  Future<void> stop() async {
+  Future<void> stop({
+    String name = 'Bài tập',
+    double calories = 0.0,
+    int steps = 0,
+    int iconCodePoint = 0,
+    String type = 'cardio',
+    List<ExerciseEntity> exercises = const [],
+  }) async {
     _service.stop();
-    await _stop.execute(state);
+    await _stop.execute(
+      state,
+      name: name,
+      calories: calories,
+      steps: steps,
+      iconCodePoint: iconCodePoint,
+      type: type,
+      exercises: exercises,
+    );
   }
 
   void reset() => _service.reset();

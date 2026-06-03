@@ -148,20 +148,27 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
 
           // Danh sách kết quả từ API
           Expanded(
-            child: apiResults.isEmpty
-                ? Center(
-                    child: Text(
-                      _query.isEmpty ? 'Nhập tên món ăn để tìm kiếm' : 'Không tìm thấy kết quả',
-                      style: const TextStyle(color: VitaTrackTheme.mauChuPhu),
+            child: apiResults.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(
+                child: Text('Lỗi tìm kiếm: ${e.toString()}',
+                    style: const TextStyle(color: VitaTrackTheme.mauNguyHiem)),
+              ),
+              data: (results) => results.isEmpty
+                  ? Center(
+                      child: Text(
+                        _query.isEmpty ? 'Nhập tên món ăn để tìm kiếm' : 'Không tìm thấy kết quả',
+                        style: const TextStyle(color: VitaTrackTheme.mauChuPhu),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: results.length,
+                      itemBuilder: (context, index) {
+                        final item = results[index];
+                        return _foodCard(item);
+                      },
                     ),
-                  )
-                : ListView.builder(
-                    itemCount: apiResults.length,
-                    itemBuilder: (context, index) {
-                      final item = apiResults[index];
-                      return _foodCard(item);
-                    },
-                  ),
+            ),
           ),
         ],
       ),
