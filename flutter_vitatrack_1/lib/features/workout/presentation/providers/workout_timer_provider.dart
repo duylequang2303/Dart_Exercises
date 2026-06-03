@@ -11,10 +11,16 @@ import 'package:flutter_vitatrack_1/features/workout/data/repositories/workout_r
 import 'package:flutter_vitatrack_1/features/AI_Coach/presentation/providers/ai_coach_dependencies_provider.dart';
 import 'package:flutter_vitatrack_1/features/workout/data/services/workout_ai_service.dart';
 import 'package:flutter_vitatrack_1/features/workout/domain/entities/exercise_entity.dart';
+import 'package:flutter_vitatrack_1/features/workout/domain/entities/workout_entity.dart';
 
 final workoutLocalDataSourceProvider = Provider<WorkoutLocalDataSource>((ref) => WorkoutLocalDataSource());
 
 final workoutRepositoryProvider = Provider<WorkoutRepository>((ref) => WorkoutRepositoryImpl(localDataSource: ref.read(workoutLocalDataSourceProvider)));
+
+final workoutHistoryProvider = FutureProvider<List<WorkoutEntity>>((ref) async {
+  final repo = ref.read(workoutRepositoryProvider);
+  return await repo.getHistory();
+});
 
 final workoutAiServiceProvider = Provider<WorkoutAiService>((ref) {
   return WorkoutAiService(
@@ -40,7 +46,9 @@ final workoutElapsedProvider = StateNotifierProvider<WorkoutTimerNotifier, Durat
   final startUc = ref.read(startWorkoutUseCaseProvider);
   final stopUc = ref.read(stopWorkoutUseCaseProvider);
   final trackUc = ref.read(trackWorkoutProgressUseCaseProvider);
-  return WorkoutTimerNotifier(timer, startUc, stopUc, trackUc);
+  return WorkoutTimerNotifier(timer, startUc, stopUc, trackUc, () {
+    ref.invalidate(workoutHistoryProvider);
+  });
 });
 
 final workoutCountdownProvider = StreamProvider<int?>((ref) {
@@ -53,9 +61,10 @@ class WorkoutTimerNotifier extends StateNotifier<Duration> {
   final StartWorkout _start;
   final StopWorkout _stop;
   final TrackWorkoutProgress _track;
+  final void Function() _onStop;
   StreamSubscription<Duration>? _sub;
 
-  WorkoutTimerNotifier(this._service, this._start, this._stop, this._track) : super(Duration.zero) {
+  WorkoutTimerNotifier(this._service, this._start, this._stop, this._track, this._onStop) : super(Duration.zero) {
     _sub = _service.elapsedStream.listen((d) {
       state = d;
       // fire-and-forget tracking
@@ -86,6 +95,7 @@ class WorkoutTimerNotifier extends StateNotifier<Duration> {
       type: type,
       exercises: exercises,
     );
+    _onStop();
   }
 
   void reset() => _service.reset();

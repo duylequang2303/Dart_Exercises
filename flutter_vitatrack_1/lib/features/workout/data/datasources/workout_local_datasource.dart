@@ -93,5 +93,10 @@ class WorkoutLocalDataSource {
     // Placeholder
   }
 
-  List<WorkoutEntity> getAllWorkouts() => List.unmodifiable(_storage);
+  Future<List<WorkoutEntity>> getAllWorkouts() async {
+    if (_prefs == null) {
+      await _init();
+    }
+    return List.unmodifiable(_storage);
+  }
 }

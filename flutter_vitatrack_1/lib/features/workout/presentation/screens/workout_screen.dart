@@ -210,8 +210,9 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
   }
 
   Widget _buildOverview({Key? key}) {
-    // Lấy dữ liệu thật từ workoutLocalDataSource qua provider
-    final allWorkouts = ref.watch(workoutLocalDataSourceProvider).getAllWorkouts();
+    // Lấy dữ liệu thật từ provider
+    final historyAsync = ref.watch(workoutHistoryProvider);
+    final List<WorkoutEntity> allWorkouts = historyAsync.value ?? [];
     // WorkoutEntity không có startTime - lưu trong RAM, tất cả đều là session hiện tại
     final todayWorkouts = allWorkouts; // Tất cả workouts trong session đều là hôm nay
 
@@ -279,7 +280,9 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
   }
 
   Widget _buildExercises({Key? key}) {
-    final allWorkouts = ref.watch(workoutLocalDataSourceProvider).getAllWorkouts();
+    // Lấy lịch sử thực tế từ DataSource
+    final historyAsync = ref.watch(workoutHistoryProvider);
+    final List<WorkoutEntity> allWorkouts = historyAsync.value ?? [];
 
     return Column(
       key: key,
