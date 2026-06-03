@@ -6,14 +6,17 @@ import 'nutrition_month_view.dart';
 // 1. IMPORT THÊM MÀN HÌNH THÊM MÓN ĂN
 import 'add_food_screen.dart'; 
 
-class NutritionScreen extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_vitatrack_1/features/nutrition/presentation/providers/nutrition_provider.dart';
+
+class NutritionScreen extends ConsumerStatefulWidget {
   const NutritionScreen({super.key});
 
   @override
-  State<NutritionScreen> createState() => _NutritionScreenState();
+  ConsumerState<NutritionScreen> createState() => _NutritionScreenState();
 }
 
-class _NutritionScreenState extends State<NutritionScreen> {
+class _NutritionScreenState extends ConsumerState<NutritionScreen> {
   int _tabHienTai = 0;
 
   @override
@@ -56,13 +59,22 @@ class _NutritionScreenState extends State<NutritionScreen> {
               ),
             ),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Column(
-                  children: [
-                    _hienThiNoiDungTab(),
-                    const SizedBox(height: 80),
-                  ],
+              child: RefreshIndicator(
+                color: VitaTrackTheme.mauChinh,
+                onRefresh: () async {
+                  if (_tabHienTai == 0) {
+                    await ref.read(nutritionProvider.notifier).load();
+                  }
+                },
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Column(
+                    children: [
+                      _hienThiNoiDungTab(),
+                      const SizedBox(height: 80),
+                    ],
+                  ),
                 ),
               ),
             ),

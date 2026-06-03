@@ -1,6 +1,7 @@
 class UserHealthContext {
   final int stepsToday;
   final int caloriesBurned;
+  final int activeCaloriesBurned;
   final int waterIntakeMl;
   final double sleepHours;
   final int heartRateBpm;
@@ -21,9 +22,14 @@ class UserHealthContext {
   final double carbsGram;
   final double fatGram;
 
+  // Chi tiết ăn uống và tập luyện
+  final List<String> mealNames;
+  final List<String> workoutNames;
+
   const UserHealthContext({
     required this.stepsToday,
     required this.caloriesBurned,
+    this.activeCaloriesBurned = 0,
     required this.waterIntakeMl,
     required this.sleepHours,
     required this.heartRateBpm,
@@ -39,6 +45,8 @@ class UserHealthContext {
     this.proteinGram = 0,
     this.carbsGram = 0,
     this.fatGram = 0,
+    this.mealNames = const [],
+    this.workoutNames = const [],
   });
 
   // ── Computed getters ──────────────────────────────────────
@@ -79,11 +87,16 @@ class UserHealthContext {
 ${profileInfo.toString()}
 Dữ liệu sức khỏe hôm nay:
 - Số bước: $stepsToday/$dailyStepsGoal bước
-- Calories nạp vào: $caloriesBurned/$dailyCaloriesGoal kcal
+- Calories nạp vào (Ăn uống): $caloriesBurned/$dailyCaloriesGoal kcal
+- Calories tiêu hao (Tập luyện): $activeCaloriesBurned kcal
 - Protein: ${proteinGram.toStringAsFixed(0)}g | Carbs: ${carbsGram.toStringAsFixed(0)}g | Chất béo: ${fatGram.toStringAsFixed(0)}g
 - Nước uống: ${waterIntakeMl}ml/${dailyWaterGoalMl}ml
 - Giấc ngủ: $sleepHours giờ
 - Nhịp tim trung bình: $heartRateBpm BPM
+
+Chi tiết hoạt động hôm nay:
+- Các món đã ăn: ${mealNames.isEmpty ? 'Chưa ăn gì' : mealNames.join(', ')}
+- Các bài đã tập: ${workoutNames.isEmpty ? 'Chưa tập gì' : workoutNames.join(', ')}
 ''';
   }
 }

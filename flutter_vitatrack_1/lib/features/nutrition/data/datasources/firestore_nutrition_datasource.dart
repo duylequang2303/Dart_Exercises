@@ -62,19 +62,26 @@ class FirestoreNutritionDataSource {
     }
   }
 
-  Future<void> addMeal(String uid, int calo, double protein, double carb, double fat) async {
+  Future<void> addMeal(
+    String uid,
+    int calo,
+    double protein,
+    double carb,
+    double fat, {
+    String tenMonAn = 'Bữa ăn thêm',
+  }) async {
     final nutrition = await getNutritionToday(uid);
     final date = _getTodayDateString();
     final path = 'users/$uid/nutrition';
 
     final newMeal = MealModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      tenMonAn: 'Bữa ăn thêm',
+      tenMonAn: tenMonAn,
       loaiBuaAn: 'phu',
       calo: calo,
-      protein: protein,
-      carbs: carb,
-      fat: fat,
+      protein: double.parse(protein.toStringAsFixed(1)),
+      carbs: double.parse(carb.toStringAsFixed(1)),
+      fat: double.parse(fat.toStringAsFixed(1)),
       uid: uid,
       ngayAn: DateTime.now(),
     ).toFirestore();
@@ -85,5 +92,31 @@ class FirestoreNutritionDataSource {
       'caloDaNap': nutrition.caloDaNap + calo,
       'meals': updatedMeals,
     });
+  }
+
+  Future<void> deleteMeal(String uid, String mealId) async {
+    final nutrition = await getNutritionToday(uid);
+    final date = _getTodayDateString();
+    final path = 'users/$uid/nutrition';
+
+    int mealCalo = 0;
+    bool deleted = false;
+    final updatedMeals = nutrition.lichSuBuaAn.where((m) {
+      final currentId = m['id']?.toString();
+      final currentName = m['tenMonAn']?.toString() ?? m['ten']?.toString();
+      if (!deleted && (currentId == mealId || currentName == mealId)) {
+        mealCalo = m['calo'] as int? ?? 0;
+        deleted = true;
+        return false;
+      }
+      return true;
+    }).toList();
+
+    if (deleted) {
+      await _firestoreService.updateDocument(path, date, {
+        'caloDaNap': (nutrition.caloDaNap - mealCalo).clamp(0, 99999),
+        'meals': updatedMeals,
+      });
+    }
   }
 }

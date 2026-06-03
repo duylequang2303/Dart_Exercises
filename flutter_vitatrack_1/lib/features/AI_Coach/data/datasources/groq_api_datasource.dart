@@ -231,7 +231,7 @@ Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
       }
     }
 
-    const visionModel = 'llama-3.2-11b-vision-preview';
+    const visionModel = 'meta-llama/llama-4-scout-17b-16e-instruct';
 
     final messages = [
       {

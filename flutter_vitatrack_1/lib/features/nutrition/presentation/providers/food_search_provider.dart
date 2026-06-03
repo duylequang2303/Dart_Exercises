@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/food_entity.dart';
 import '../../data/datasources/food_api_datasource.dart';
@@ -26,7 +27,6 @@ class FoodSearchNotifier extends StateNotifier<AsyncValue<List<FoodEntity>>> {
   FoodSearchNotifier(this._dataSource) : super(const AsyncValue.data([]));
 
   Future<void> timKiem(String query) async {
-    // Hủy debounce cũ (người dùng vẫn đang gõ)
     _debounce?.cancel();
 
     if (query.isEmpty) {
@@ -35,20 +35,28 @@ class FoodSearchNotifier extends StateNotifier<AsyncValue<List<FoodEntity>>> {
       return;
     }
 
-    // Chờ 500ms sau ký tự cuối cùng mới gửi request
-    _debounce = Timer(const Duration(milliseconds: 500), () async {
-      // Hủy request đang chạy dở (nếu có) để tránh race condition
+    _debounce = Timer(const Duration(milliseconds: 600), () async {
       _cancelToken?.cancel('Request mới gửi đi');
       _cancelToken = CancelToken();
 
       state = const AsyncValue.loading();
       try {
+        // Bước 1: Tìm trên OpenFoodFacts trước
         final results = await _dataSource.searchFood(query, cancelToken: _cancelToken);
-        if (!(_cancelToken?.isCancelled ?? false)) {
+
+        if (_cancelToken?.isCancelled ?? false) return;
+
+        if (results.isNotEmpty) {
+          // Có kết quả từ database thực → dùng luôn
           state = AsyncValue.data(results);
+        } else {
+          // Không có kết quả → Fallback AI ước tính dinh dưỡng
+          final groqKey = dotenv.env['GROQ_API_KEY'] ?? '';
+          final aiResults = await _dataSource.estimateByAI(query, groqKey);
+          state = AsyncValue.data(aiResults);
         }
       } on DioException catch (e) {
-        if (e.type == DioExceptionType.cancel) return; // Request bị hủy - bỏ qua
+        if (e.type == DioExceptionType.cancel) return;
         state = AsyncValue.error(e, StackTrace.current);
       } catch (e, st) {
         state = AsyncValue.error(e, st);
@@ -62,4 +70,4 @@ class FoodSearchNotifier extends StateNotifier<AsyncValue<List<FoodEntity>>> {
     _cancelToken?.cancel('Provider disposed');
     super.dispose();
   }
-}
+}

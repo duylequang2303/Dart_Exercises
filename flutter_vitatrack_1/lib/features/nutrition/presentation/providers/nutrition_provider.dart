@@ -52,9 +52,15 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
     await load();
   }
 
-  Future<void> themMonAn(int calo, double p, double c, double f) async {
+  Future<void> themMonAn(int calo, double p, double c, double f, {String tenMonAn = 'Bữa ăn thêm'}) async {
     if (_uid == null) return;
-    await _datasource.addMeal(_uid, calo, p, c, f);
+    await _datasource.addMeal(_uid, calo, p, c, f, tenMonAn: tenMonAn);
+    await load();
+  }
+
+  Future<void> xoaMonAn(String mealId) async {
+    if (_uid == null) return;
+    await _datasource.deleteMeal(_uid, mealId);
     await load();
   }
 }

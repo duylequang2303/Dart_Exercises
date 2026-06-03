@@ -24,8 +24,7 @@ final workoutHistoryProvider = FutureProvider<List<WorkoutEntity>>((ref) async {
 
 final workoutAiServiceProvider = Provider<WorkoutAiService>((ref) {
   return WorkoutAiService(
-    apiKey: kGeminiApiKey,
-    model: kGeminiModel,
+    apiKey: kGroqApiKey,
   );
 });
 
@@ -92,10 +91,11 @@ class WorkoutTimerNotifier extends StateNotifier<Duration> {
     int iconCodePoint = 0,
     String type = 'cardio',
     List<ExerciseEntity> exercises = const [],
+    Duration? overrideDuration,
   }) async {
     _service.stop();
     await _stop.execute(
-      state,
+      overrideDuration ?? state,
       name: name,
       calories: calories,
       steps: steps,

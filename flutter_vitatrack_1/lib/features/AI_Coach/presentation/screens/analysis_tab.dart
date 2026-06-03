@@ -597,15 +597,26 @@ class _NutritionCard extends StatelessWidget {
       icon: Icons.restaurant_rounded,
       child: Column(
         children: [
-          // Calories
+          // Calories nạp vào
           _ProgressRow(
-            icon: Icons.local_fire_department_rounded,
+            icon: Icons.fastfood_rounded,
             color: AppColors.caloriesColor,
-            label: 'Calories',
+            label: 'Calo nạp',
             value:
                 '${context.caloriesBurned}/${context.dailyCaloriesGoal}',
             unit: 'kcal',
             percent: caloPercent,
+          ),
+          const SizedBox(height: 14),
+
+          // Calories tiêu hao
+          _ProgressRow(
+            icon: Icons.local_fire_department_rounded,
+            color: Colors.deepOrangeAccent,
+            label: 'Calo tiêu hao',
+            value: '${context.activeCaloriesBurned}',
+            unit: 'kcal',
+            percent: (context.activeCaloriesBurned / 500.0).clamp(0.0, 1.0), // Giả sử mục tiêu đốt là 500kcal
           ),
           const SizedBox(height: 14),
 

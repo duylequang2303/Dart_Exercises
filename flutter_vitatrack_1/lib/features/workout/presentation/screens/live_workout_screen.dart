@@ -140,9 +140,9 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen> with Tick
     _holdTimer?.cancel();
     final currentEx = widget.exercises[_currentExerciseIndex];
     
-    // Đốt calo sau mỗi hiệp
+    // Đốt calo sau mỗi hiệp (Ví dụ 1 cái = 0.8 kcal, hoặc 1 hiệp giữ tĩnh = 15 kcal)
     setState(() {
-      _accumulatedCalories += (currentEx.reps > 0) ? (currentEx.reps * 0.1) : 8.0;
+      _accumulatedCalories += (currentEx.reps > 0) ? (currentEx.reps * 0.8) : 15.0;
     });
 
     if (_currentSetIndex < currentEx.sets) {
@@ -174,10 +174,39 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen> with Tick
     final liveState = ref.read(liveWorkoutProvider);
     final elapsed = ref.read(workoutElapsedProvider);
 
-    // Tính toán calo tổng hợp
+    // Tính toán calo tổng hợp và thời gian dự kiến
     double finalCalories = liveState.calories;
+    Duration finalDuration = elapsed;
+
     if (widget.exercises.isNotEmpty) {
       finalCalories = _accumulatedCalories;
+      
+      // Tính toán thời gian dự kiến (tránh việc bấm next quá nhanh dẫn đến lịch sử chỉ có vài giây)
+      int expectedSeconds = 0;
+      for (var ex in widget.exercises) {
+        if (ex.reps > 0) {
+          expectedSeconds += ex.sets * ex.reps * 4; // Trung bình 4s cho 1 cái (reps)
+        } else {
+          expectedSeconds += ex.sets * ex.duration.inSeconds; // Thời gian giữ thế
+        }
+        expectedSeconds += ex.sets * ex.restSeconds; // Thời gian nghỉ
+      }
+      
+      // Nếu người dùng bấm nhanh qua bài tập (chưa tới 1/3 thời gian), ta sẽ lấy thời gian chuẩn dự kiến
+      if (elapsed.inSeconds < expectedSeconds / 3) {
+        finalDuration = Duration(seconds: expectedSeconds);
+      }
+    }
+
+    if (widget.exercises.isEmpty && elapsed.inSeconds < 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Bài tập quá ngắn nên không được lưu vào lịch sử.'),
+          backgroundColor: VitaTrackTheme.mauCanhBao,
+        ),
+      );
+      Navigator.pop(context, false);
+      return;
     }
 
     ref.read(workoutElapsedProvider.notifier).stop(
@@ -187,6 +216,7 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen> with Tick
       iconCodePoint: widget.iconBaiTap.codePoint,
       type: widget.type,
       exercises: widget.exercises,
+      overrideDuration: finalDuration, // Dùng thời gian đã tính toán
     );
 
     ref.read(liveWorkoutProvider.notifier).reset();

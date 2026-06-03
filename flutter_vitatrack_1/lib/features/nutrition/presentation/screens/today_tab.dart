@@ -296,11 +296,14 @@ class _TodayTabState extends ConsumerState<TodayTab> {
     // Lấy thông tin bữa ăn hỗ trợ cả Mock và Firestore
     final ten = bua['ten'] ?? bua['tenMonAn'] ?? 'Bữa ăn';
     
-    final protein = bua['protein'] ?? 0;
-    final carbs = bua['carbs'] ?? 0;
-    final fat = bua['fat'] ?? 0;
+    final protein = (bua['protein'] as num?)?.toDouble() ?? 0;
+    final carbs = (bua['carbs'] as num?)?.toDouble() ?? 0;
+    final fat = (bua['fat'] as num?)?.toDouble() ?? 0;
     
-    final chiTiet = bua['chiTiet'] ?? 'Protein: ${protein}g | Carbs: ${carbs}g | Chất béo: ${fat}g';
+    // Format số gọn: nếu là số nguyên thì hiện không có .0
+    String _fmt(double v) => v == v.roundToDouble() ? '${v.toInt()}' : v.toStringAsFixed(1);
+    
+    final chiTiet = bua['chiTiet'] ?? 'Protein: ${_fmt(protein)}g | Carbs: ${_fmt(carbs)}g | Chất béo: ${_fmt(fat)}g';
 
     // Xác định icon phù hợp theo loại bữa ăn
     IconData icon = Icons.restaurant_rounded;
@@ -356,11 +359,11 @@ class _TodayTabState extends ConsumerState<TodayTab> {
                 // Thanh hiển thị Macro thực tế từ Firestore
                 Row(
                   children: [
-                    _chipMacroGiay('P: ${protein}g', VitaTrackTheme.mauNguyHiem),
+                    _chipMacroGiay('P: ${_fmt(protein)}g', VitaTrackTheme.mauNguyHiem),
                     const SizedBox(width: 8),
-                    _chipMacroGiay('C: ${carbs}g', VitaTrackTheme.mauCanhBao),
+                    _chipMacroGiay('C: ${_fmt(carbs)}g', VitaTrackTheme.mauCanhBao),
                     const SizedBox(width: 8),
-                    _chipMacroGiay('F: ${fat}g', VitaTrackTheme.mauChinh),
+                    _chipMacroGiay('F: ${_fmt(fat)}g', VitaTrackTheme.mauChinh),
                   ],
                 ),
               ],
@@ -382,14 +385,29 @@ class _TodayTabState extends ConsumerState<TodayTab> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   onSelected: (value) {
                     if (value == 'delete') {
-                      HapticFeedback.mediumImpact();
+                      final mealId = bua['id']?.toString() ?? bua['tenMonAn']?.toString() ?? bua['ten']?.toString();
+                      if (mealId != null) {
+                        ref.read(nutritionProvider.notifier).xoaMonAn(mealId);
+                        HapticFeedback.mediumImpact();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('Đã xóa món ăn thành công!'),
+                            backgroundColor: VitaTrackTheme.mauThanhCong,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    } else if (value == 'edit') {
+                      HapticFeedback.lightImpact();
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: const Text('Đã xóa món ăn thành công!'),
-                          backgroundColor: VitaTrackTheme.mauThanhCong,
+                          content: const Text('Mẹo: Xóa món ăn này và thêm lại với định lượng mới nhé!'),
+                          backgroundColor: VitaTrackTheme.mauCanhBao,
                           behavior: SnackBarBehavior.floating,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          duration: const Duration(seconds: 2),
+                          duration: const Duration(seconds: 3),
                         ),
                       );
                     }

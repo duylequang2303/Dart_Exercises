@@ -3,6 +3,10 @@ import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/user_health_context.dart';
 import 'ai_coach_dependencies_provider.dart';
 
+import '../../../../features/health/presentation/providers/health_provider.dart';
+import '../../../../features/nutrition/presentation/providers/nutrition_provider.dart';
+import '../../../../features/workout/presentation/providers/workout_timer_provider.dart';
+
 // ─── State ────────────────────────────────────────────────────
 
 class ChatState {
@@ -38,17 +42,51 @@ class ChatNotifier extends StateNotifier<ChatState> {
     _loadChatHistory();
   }
 
-  // Mock context - sau này thay bằng dữ liệu thực từ health feature
-  UserHealthContext get _healthContext => const UserHealthContext(
-        stepsToday: 8290,
-        caloriesBurned: 450,
-        waterIntakeMl: 1800,
-        sleepHours: 7.5,
-        heartRateBpm: 72,
-        dailyStepsGoal: 10000,
-        dailyCaloriesGoal: 700,
-        dailyWaterGoalMl: 2500,
-      );
+  // Lấy dữ liệu thực từ các providers
+  UserHealthContext get _healthContext {
+    final health = _ref.read(healthProvider);
+    final nutrition = _ref.read(nutritionProvider);
+    
+    // Lấy workout history (nếu đã load thành công)
+    final workoutAsync = _ref.read(workoutHistoryProvider);
+    final workouts = workoutAsync.value ?? [];
+    final workoutNames = workouts.map((w) => w.name).toList();
+
+    // Lấy tên các món ăn
+    final mealNames = nutrition.lichSuBuaAn.map((m) {
+      final name = m['tenMonAn'] ?? m['ten'] ?? 'Món ăn';
+      final calo = m['calo'] ?? 0;
+      return '$name ($calo kcal)';
+    }).toList();
+
+    // Tính toán macro
+    double totalP = 0, totalC = 0, totalF = 0;
+    for (var m in nutrition.lichSuBuaAn) {
+      totalP += (m['protein'] as num?)?.toDouble() ?? 0;
+      totalC += (m['carbs'] as num?)?.toDouble() ?? 0;
+      totalF += (m['fat'] as num?)?.toDouble() ?? 0;
+    }
+
+    // Tính calo đốt được từ các bài tập
+    final calBurned = workouts.fold<int>(0, (sum, w) => sum + w.calories.toInt());
+
+    return UserHealthContext(
+      stepsToday: health.steps,
+      caloriesBurned: nutrition.caloDaNap,
+      activeCaloriesBurned: calBurned,
+      waterIntakeMl: nutrition.soLyNuoc * 250, // 250ml mỗi ly
+      sleepHours: health.sleepHours, // Lấy thẳng số giờ ngủ từ HealthMetric
+      heartRateBpm: health.heartRate,
+      dailyStepsGoal: 10000,
+      dailyCaloriesGoal: nutrition.caloMucTieu > 0 ? nutrition.caloMucTieu : 2000,
+      dailyWaterGoalMl: 2500,
+      proteinGram: totalP,
+      carbsGram: totalC,
+      fatGram: totalF,
+      mealNames: mealNames,
+      workoutNames: workoutNames.isEmpty && calBurned > 0 ? ['Có tập luyện ($calBurned kcal)'] : workoutNames,
+    );
+  }
 
   Future<void> _loadChatHistory() async {
     try {

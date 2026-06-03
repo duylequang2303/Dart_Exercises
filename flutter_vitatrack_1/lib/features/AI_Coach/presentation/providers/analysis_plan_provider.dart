@@ -52,6 +52,7 @@ final userHealthContextProvider = Provider<UserHealthContext>((ref) {
   return UserHealthContext(
     stepsToday: health.steps,
     caloriesBurned: nutrition.caloDaNap,
+    activeCaloriesBurned: 0, // Tính sau
     waterIntakeMl: nutrition.soLyNuoc * 250,
     sleepHours: health.sleepHours == 0.0 ? 7.5 : health.sleepHours,
     heartRateBpm: health.heartRate == 0 ? 72 : health.heartRate,

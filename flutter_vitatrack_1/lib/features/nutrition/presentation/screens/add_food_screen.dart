@@ -175,7 +175,6 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
     );
   }
 
-  // Widget hiển thị món ăn đã được sửa để nhận FoodEntity
   Widget _foodCard(FoodEntity item) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
@@ -184,7 +183,6 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
           color: VitaTrackTheme.mauCard, borderRadius: BorderRadius.circular(14)),
       child: Row(
         children: [
-          // Ảnh từ API hoặc icon mặc định
           Container(
             width: 45,
             height: 45,
@@ -214,7 +212,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
                         fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
                 Text(
-                    'P: ${item.protein}g · C: ${item.carbs}g · F: ${item.fat}g',
+                    'P: ${item.protein.toStringAsFixed(1)}g · C: ${item.carbs.toStringAsFixed(1)}g · F: ${item.fat.toStringAsFixed(1)}g',
                     style: const TextStyle(
                         color: VitaTrackTheme.mauChuPhu, fontSize: 11)),
               ],
@@ -234,26 +232,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
           ),
           const SizedBox(width: 8),
           GestureDetector(
-            onTap: () {
-              HapticFeedback.lightImpact();
-              // Lưu vào Firestore thông qua nutritionProvider
-              ref.read(nutritionProvider.notifier).themMonAn(
-                    item.calo,
-                    item.protein,
-                    item.carbs,
-                    item.fat,
-                  );
-              
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text('Đã thêm ${item.tenMonAn}!'),
-                backgroundColor: VitaTrackTheme.mauThanhCong,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                duration: const Duration(seconds: 1),
-              ));
-              Navigator.pop(context);
-            },
+            onTap: () => _showPortionDialog(item),
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: const BoxDecoration(
@@ -262,6 +241,171 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showPortionDialog(FoodEntity item) {
+    final nameLower = item.tenMonAn.toLowerCase();
+    
+    // Uống
+    final isDrink = nameLower.contains('nước') || 
+                    nameLower.contains('sữa') || 
+                    nameLower.contains('cà phê') || 
+                    nameLower.contains('cafe') || 
+                    nameLower.contains('trà') || 
+                    nameLower.contains('tea') || 
+                    nameLower.contains('coffee') || 
+                    nameLower.contains('milk') || 
+                    nameLower.contains('juice') ||
+                    nameLower.contains('bia') ||
+                    nameLower.contains('rượu') ||
+                    nameLower.contains('sinh tố');
+
+    // Suất ăn / Tô / Bát / Đĩa (phức tạp)
+    final isComplex = nameLower.contains('cơm') ||
+                      nameLower.contains('phở') ||
+                      nameLower.contains('bún') ||
+                      nameLower.contains('hủ tiếu') ||
+                      nameLower.contains('mì') ||
+                      nameLower.contains('bánh mì') ||
+                      nameLower.contains('salad') ||
+                      nameLower.contains('lẩu') ||
+                      nameLower.contains('xôi');
+
+    String unit = 'gram';
+    String unitShort = 'g';
+    String promptText = 'Bạn ăn bao nhiêu gam?';
+    List<dynamic> quickOptions = [50, 100, 150, 200, 300];
+    String initialText = '100';
+
+    if (isDrink) {
+      unit = 'ml';
+      unitShort = 'ml';
+      promptText = 'Bạn uống bao nhiêu ml?';
+      quickOptions = [100, 200, 300, 400, 500];
+      initialText = '200';
+    } else if (isComplex) {
+      unit = 'phần';
+      unitShort = ' phần'; // Dấu cách để hiển thị đẹp: 1 phần, 2 phần
+      promptText = 'Bạn ăn bao nhiêu phần? (VD: 1 phần, 1.5 phần)';
+      quickOptions = [0.5, 1, 1.5, 2, 3];
+      initialText = '1';
+    }
+
+    final controller = TextEditingController(text: initialText);
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Container(
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: VitaTrackTheme.mauCard,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                item.tenMonAn,
+                style: const TextStyle(
+                  color: VitaTrackTheme.mauChu,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                isComplex ? '${item.calo} kcal / 1 phần' : '${item.calo} kcal / 100$unitShort',
+                style: const TextStyle(color: VitaTrackTheme.mauChuPhu, fontSize: 13),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                promptText,
+                style: const TextStyle(
+                  color: VitaTrackTheme.mauChu,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: controller,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                autofocus: true,
+                style: const TextStyle(color: VitaTrackTheme.mauChu, fontSize: 20, fontWeight: FontWeight.bold),
+                decoration: InputDecoration(
+                  suffixText: unit,
+                  suffixStyle: const TextStyle(color: VitaTrackTheme.mauChuPhu),
+                  fillColor: VitaTrackTheme.mauCardNhat,
+                  filled: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Quick select buttons
+              Wrap(
+                spacing: 8,
+                children: quickOptions.map((v) => GestureDetector(
+                  onTap: () => controller.text = '$v',
+                  child: Chip(
+                    label: Text('$v$unitShort', style: TextStyle(color: VitaTrackTheme.mauChu, fontSize: 12)),
+                    backgroundColor: VitaTrackTheme.mauCardNhat,
+                    padding: EdgeInsets.zero,
+                  ),
+                )).toList(),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: VitaTrackTheme.mauChinh,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: () {
+                    final numV = double.tryParse(controller.text) ?? (isComplex ? 1.0 : 100.0);
+                    final multiplier = isComplex ? numV : (numV / 100);
+                    final caloDaTinh = (item.calo * multiplier).round();
+                    
+                    HapticFeedback.mediumImpact();
+                    ref.read(nutritionProvider.notifier).themMonAn(
+                      caloDaTinh,
+                      item.protein * multiplier,
+                      item.carbs * multiplier,
+                      item.fat * multiplier,
+                      tenMonAn: '${item.tenMonAn} ($numV $unit)',
+                    );
+
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('Đã thêm $numV $unit ${item.tenMonAn} ($caloDaTinh kcal)!'),
+                      backgroundColor: VitaTrackTheme.mauThanhCong,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      duration: const Duration(seconds: 2),
+                    ));
+                  },
+                  child: const Text(
+                    'Xác nhận',
+                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -366,11 +510,11 @@ class _AiCameraSheetState extends ConsumerState<_AiCameraSheet> {
       ]);
 
   Widget _buildResult(BuildContext context) {
-    final ten = _result['tenMonAn'] ?? 'Món ăn';
-    final calo = _result['calo'] ?? 0;
-    final protein = _result['protein'] ?? 0.0;
-    final carbs = _result['carbs'] ?? 0.0;
-    final fat = _result['fat'] ?? 0.0;
+    final ten = _result['tenMonAn'] as String? ?? 'Món ăn';
+    final calo = (_result['calo'] as num?)?.toInt() ?? 0;
+    final protein = (_result['protein'] as num?)?.toDouble() ?? 0.0;
+    final carbs = (_result['carbs'] as num?)?.toDouble() ?? 0.0;
+    final fat = (_result['fat'] as num?)?.toDouble() ?? 0.0;
 
     return Column(mainAxisSize: MainAxisSize.min, children: [
       const Icon(Icons.check_circle_rounded,
@@ -384,9 +528,9 @@ class _AiCameraSheetState extends ConsumerState<_AiCameraSheet> {
       const SizedBox(height: 12),
       Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
         _macroChip('$calo kcal', VitaTrackTheme.mauChinh),
-        _macroChip('P: ${protein}g', VitaTrackTheme.mauNguyHiem),
-        _macroChip('C: ${carbs}g', VitaTrackTheme.mauCanhBao),
-        _macroChip('F: ${fat}g', VitaTrackTheme.mauPhu),
+        _macroChip('P: ${protein.toStringAsFixed(1)}g', VitaTrackTheme.mauNguyHiem),
+        _macroChip('C: ${carbs.toStringAsFixed(1)}g', VitaTrackTheme.mauCanhBao),
+        _macroChip('F: ${fat.toStringAsFixed(1)}g', VitaTrackTheme.mauPhu),
       ]),
       const SizedBox(height: 18),
       SizedBox(
@@ -400,10 +544,8 @@ class _AiCameraSheetState extends ConsumerState<_AiCameraSheet> {
           onPressed: () {
             HapticFeedback.mediumImpact();
             ref.read(nutritionProvider.notifier).themMonAn(
-              calo,
-              protein.toDouble(),
-              carbs.toDouble(),
-              fat.toDouble(),
+              calo, protein, carbs, fat,
+              tenMonAn: ten,
             );
             Navigator.pop(context);
           },

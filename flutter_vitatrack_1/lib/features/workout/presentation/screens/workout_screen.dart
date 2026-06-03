@@ -66,8 +66,14 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isSearching = false);
+        final msg = e.toString().replaceFirst('Exception: ', '');
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Lỗi khi phân tích bài tập bằng AI'), backgroundColor: VitaTrackTheme.mauNguyHiem),
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: VitaTrackTheme.mauNguyHiem,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
         );
       }
     }
@@ -458,10 +464,6 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text('Bài tập gợi ý', style: TextStyle(color: VitaTrackTheme.mauChu, fontSize: 18, fontWeight: FontWeight.bold)),
-            GestureDetector(
-              onTap: _showAllExercises,
-              child: const Text('Xem tất cả >', style: TextStyle(color: VitaTrackTheme.mauChinh, fontSize: 13)),
-            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -522,56 +524,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
     );
   }
 
-  void _showAllExercises() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (sheetCtx) {
-        final allTypes = [
-          {'icon': Icons.directions_run, 'name': 'Chạy bộ ngoài trời', 'color': VitaTrackTheme.mauChinh},
-          {'icon': Icons.directions_walk, 'name': 'Đi bộ', 'color': VitaTrackTheme.mauThanhCong},
-          {'icon': Icons.pedal_bike, 'name': 'Đạp xe', 'color': VitaTrackTheme.mauThanhCong},
-          {'icon': Icons.fitness_center, 'name': 'Tập Gym / Sức mạnh', 'color': VitaTrackTheme.mauNguyHiem},
-          {'icon': Icons.pool, 'name': 'Bơi lội', 'color': VitaTrackTheme.mauChinh},
-          {'icon': Icons.self_improvement, 'name': 'Yoga', 'color': VitaTrackTheme.mauPhu},
-          {'icon': Icons.sports_basketball, 'name': 'Bóng rổ', 'color': VitaTrackTheme.mauCanhBao},
-          {'icon': Icons.sports_soccer, 'name': 'Đá bóng', 'color': VitaTrackTheme.mauThanhCong},
-        ];
-        return Container(
-          padding: const EdgeInsets.all(24),
-          decoration: const BoxDecoration(color: VitaTrackTheme.mauCard, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: VitaTrackTheme.mauCardNhat, borderRadius: BorderRadius.circular(2)))),
-              const SizedBox(height: 20),
-              const Text('Tất cả bài tập', style: TextStyle(color: VitaTrackTheme.mauChu, fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
-              ...allTypes.map((t) => ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: (t['color'] as Color).withValues(alpha: 0.15), shape: BoxShape.circle), child: Icon(t['icon'] as IconData, color: t['color'] as Color)),
-                title: Text(t['name'] as String, style: const TextStyle(color: VitaTrackTheme.mauChu, fontWeight: FontWeight.w600)),
-                trailing: const Icon(Icons.play_arrow_rounded, color: VitaTrackTheme.mauChinh),
-                onTap: () async {
-                  HapticFeedback.lightImpact();
-                  Navigator.pop(sheetCtx);
-                  final result = await Navigator.push<bool>(context, PageRouteBuilder(
-                    pageBuilder: (_, _, _) => LiveWorkoutScreen(tenBaiTap: t['name'] as String, iconBaiTap: t['icon'] as IconData),
-                    transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: animation, child: child),
-                  ));
-                  if (!mounted) return;
-                  if (result == true) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Đã lưu bài tập ${t['name']}!'), backgroundColor: VitaTrackTheme.mauThanhCong, behavior: SnackBarBehavior.floating));
-                },
-              )),
-              const SizedBox(height: 8),
-            ],
-          ),
-        );
-      },
-    );
-  }
+  // Đã xóa hàm _showAllExercises theo yêu cầu
 
   IconData _getIconForWorkout(String name) {
     final nameLower = name.toLowerCase();
