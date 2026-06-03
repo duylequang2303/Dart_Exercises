@@ -548,7 +548,7 @@ class _HealthTodayCard extends StatelessWidget {
               Expanded(
                 child: _StatItem(
                   label: 'Nhịp tim',
-                  value: '${context.heartRateBpm}',
+                  value: 'N/A',
                   unit: 'BPM',
                   icon: Icons.favorite_rounded,
                   color: AppColors.negativeColor,

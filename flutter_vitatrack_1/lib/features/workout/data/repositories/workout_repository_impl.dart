@@ -38,11 +38,26 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
 
   @override
   Future<void> updateProgress(Duration elapsed) async {
-    await localDataSource.updateProgress(elapsed);
+    return localDataSource.updateProgress(elapsed);
   }
 
   @override
   Future<List<WorkoutEntity>> getHistory() async {
     return localDataSource.getAllWorkouts();
+  }
+
+  @override
+  Future<void> saveWorkoutPlan(WorkoutEntity plan) async {
+    return localDataSource.saveWorkoutPlan(plan);
+  }
+
+  @override
+  Future<List<WorkoutEntity>> getWorkoutPlans() async {
+    return localDataSource.getWorkoutPlans();
+  }
+
+  @override
+  Future<void> deleteWorkout(String id) async {
+    await localDataSource.deleteWorkout(id);
   }
 }

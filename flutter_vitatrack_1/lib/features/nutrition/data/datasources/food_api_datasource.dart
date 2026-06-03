@@ -46,8 +46,14 @@ class FoodApiDataSource {
           'messages': [
             {
               'role': 'user',
-              'content': '''Ước tính thông tin dinh dưỡng cho món ăn: "$query".
-Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
+              'content': '''Phân tích tên món ăn/thực phẩm: "$query".
+Nếu đây KHÔNG PHẢI là tên thức ăn, đồ uống hoặc nguyên liệu (ví dụ: là đồ vật như cây kéo, tên người, từ vô nghĩa), hãy trả về:
+[
+  {
+    "error": "Đây không phải là thức ăn hoặc đồ uống"
+  }
+]
+Nếu là thức ăn/đồ uống, ước tính thông tin dinh dưỡng và trả về ĐÚNG định dạng JSON sau:
 [
   {
     "tenMonAn": "Tên đầy đủ của món",
@@ -57,7 +63,7 @@ Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
     "fat": 5.0
   }
 ]
-Lưu ý: ước tính cho 100g hoặc 1 khẩu phần thông thường. Có thể trả về 1-3 biến thể nếu cần.''',
+Lưu ý: ước tính cho 100g hoặc 1 khẩu phần thông thường.''',
             }
           ],
           'temperature': 0.2,
@@ -79,7 +85,13 @@ Lưu ý: ước tính cho 100g hoặc 1 khẩu phần thông thường. Có th�
 
       final jsonStr = text.substring(start, end + 1);
       final dynamic parsed = jsonDecode(jsonStr);
-      if (parsed is! List) return [];
+      if (parsed is! List || parsed.isEmpty) return [];
+
+      // Kiểm tra nếu AI trả về lỗi (không phải thức ăn)
+      final firstItem = parsed[0] as Map<String, dynamic>;
+      if (firstItem.containsKey('error')) {
+        throw Exception(firstItem['error']);
+      }
 
       return parsed.map((item) {
         final map = item as Map<String, dynamic>;
@@ -93,6 +105,9 @@ Lưu ý: ước tính cho 100g hoặc 1 khẩu phần thông thường. Có th�
         );
       }).where((f) => f.calo > 0).toList();
     } catch (e) {
+      if (e.toString().contains('Đây không phải là thức ăn')) {
+        rethrow;
+      }
       return [];
     }
   }

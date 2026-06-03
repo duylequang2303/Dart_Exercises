@@ -22,6 +22,11 @@ final workoutHistoryProvider = FutureProvider<List<WorkoutEntity>>((ref) async {
   return await repo.getHistory();
 });
 
+final workoutPlansProvider = FutureProvider<List<WorkoutEntity>>((ref) async {
+  final repo = ref.read(workoutRepositoryProvider);
+  return await repo.getWorkoutPlans();
+});
+
 final workoutAiServiceProvider = Provider<WorkoutAiService>((ref) {
   return WorkoutAiService(
     apiKey: kGroqApiKey,

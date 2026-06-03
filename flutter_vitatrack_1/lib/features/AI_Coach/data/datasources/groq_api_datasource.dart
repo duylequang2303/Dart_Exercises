@@ -245,16 +245,20 @@ Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
           },
           {
             'type': 'text',
-            'text': '''Phân tích món ăn trong ảnh và trả về JSON.
-Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
+            'text': '''Tìm kiếm món ăn, đồ uống hoặc thực phẩm đóng gói (như chai nước, hộp sữa) trong ảnh, bỏ qua hậu cảnh.
+Nếu trong ảnh HOÀN TOÀN KHÔNG CÓ đồ ăn/đồ uống (VD: chỉ có mặt người, phong cảnh, đồ vật thông thường), hãy trả về:
 {
-  "tenMonAn": "Tên món ăn",
+  "error": "Đây không phải là thức ăn hoặc đồ uống"
+}
+Nếu có đồ ăn, đồ uống hoặc chai lọ nước giải khát, trả về ĐÚNG định dạng JSON sau:
+{
+  "tenMonAn": "Tên món (VD: Nước Revive trắng, Cơm sườn)",
   "calo": 350,
   "protein": 15.0,
   "carbs": 40.0,
   "fat": 10.0
 }
-Ước tính cho 1 khẩu phần thông thường (gram). Nếu không nhận ra món ăn, vẫn ước tính dựa trên những gì thấy trong ảnh.''',
+LƯU Ý QUAN TRỌNG: LUÔN CỐ GẮNG ước tính lượng calo lớn hơn 0 cho các loại đồ uống có đường, nước ngọt, thực phẩm đóng gói. Không trả về 0 trừ khi chắc chắn đó là nước lọc tinh khiết hoặc đồ uống zero calo. Ước tính dựa trên khẩu phần trong ảnh hoặc 1 khẩu phần tiêu chuẩn.''',
           },
         ],
       },
@@ -290,6 +294,10 @@ Trả về ĐÚNG định dạng JSON sau, không thêm text nào khác:
       final content = choices[0]['message']['content'] as String? ?? '';
       final jsonString = _extractJson(content);
       final json = jsonDecode(jsonString) as Map<String, dynamic>;
+
+      if (json.containsKey('error')) {
+        throw GroqApiException(json['error']);
+      }
 
       return {
         'tenMonAn': json['tenMonAn'] ?? 'Món ăn',

@@ -345,13 +345,22 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen> with Tick
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(widget.iconBaiTap, color: VitaTrackTheme.mauChinh, size: 24),
-                  const SizedBox(width: 8),
-                  Text(widget.tenBaiTap, style: const TextStyle(color: VitaTrackTheme.mauChu, fontSize: 18, fontWeight: FontWeight.bold)),
-                ],
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(widget.iconBaiTap, color: VitaTrackTheme.mauChinh, size: 24),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        widget.tenBaiTap, 
+                        style: const TextStyle(color: VitaTrackTheme.mauChu, fontSize: 18, fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 16),
               Text(
                 'Bài ${_currentExerciseIndex + 1}/${widget.exercises.length}',
                 style: const TextStyle(color: VitaTrackTheme.mauChuPhu, fontWeight: FontWeight.bold),
@@ -398,6 +407,15 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen> with Tick
                   style: const TextStyle(color: VitaTrackTheme.mauChinh, fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
+              if (currentEx.instructions != null && currentEx.instructions!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 24, left: 16, right: 16),
+                  child: Text(
+                    currentEx.instructions!,
+                    style: const TextStyle(color: VitaTrackTheme.mauChuPhu, fontSize: 16, height: 1.4, fontStyle: FontStyle.italic),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
             ],
           ),
         ),
@@ -602,6 +620,15 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen> with Tick
                   : 'Hiệp 1 / ${nextEx.sets} (${nextEx.reps > 0 ? "${nextEx.reps} cái" : "${nextEx.duration.inSeconds}s giữ"})',
               style: const TextStyle(color: VitaTrackTheme.mauChuPhu, fontSize: 13),
             ),
+            if (nextEx.instructions != null && nextEx.instructions!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 8, left: 32, right: 32),
+                child: Text(
+                  nextEx.instructions!,
+                  style: const TextStyle(color: VitaTrackTheme.mauChuPhu, fontSize: 12, fontStyle: FontStyle.italic),
+                  textAlign: TextAlign.center,
+                ),
+              ),
           ],
 
           const SizedBox(height: 60),

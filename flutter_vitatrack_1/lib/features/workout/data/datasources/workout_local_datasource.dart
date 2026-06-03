@@ -93,10 +93,113 @@ class WorkoutLocalDataSource {
     // Placeholder
   }
 
+  Future<void> saveWorkoutPlan(WorkoutEntity plan) async {
+    if (_prefs == null) return;
+    try {
+      final list = _prefs!.getStringList('workouts_plans') ?? [];
+      final planJson = jsonEncode({
+        'id': plan.id,
+        'name': plan.name,
+        'durationMs': plan.duration.inMilliseconds,
+        'calories': plan.calories,
+        'steps': plan.steps,
+        'iconCodePoint': plan.iconCodePoint,
+        'type': plan.type,
+        'exercises': plan.exercises.map((e) => {
+          'id': e.id,
+          'name': e.name,
+          'sets': e.sets,
+          'reps': e.reps,
+          'durationMs': e.duration.inMilliseconds,
+          'restSeconds': e.restSeconds,
+          'instructions': e.instructions,
+        }).toList(),
+      });
+      list.add(planJson);
+      await _prefs!.setStringList('workouts_plans', list);
+    } catch (e) {
+      print('Lỗi save workout plan: $e');
+    }
+  }
+
+  Future<List<WorkoutEntity>> getWorkoutPlans() async {
+    if (_prefs == null) {
+      await _init();
+    }
+    try {
+      final list = _prefs!.getStringList('workouts_plans') ?? [];
+      final result = <WorkoutEntity>[];
+      for (final jsonStr in list) {
+        final map = jsonDecode(jsonStr) as Map<String, dynamic>;
+        
+        final exercisesList = (map['exercises'] as List<dynamic>?)?.map((e) {
+          final exerciseMap = e as Map<String, dynamic>;
+          return ExerciseEntity(
+            id: exerciseMap['id'] ?? '',
+            name: exerciseMap['name'] ?? '',
+            sets: exerciseMap['sets'] ?? 0,
+            reps: exerciseMap['reps'] ?? 0,
+            duration: Duration(milliseconds: exerciseMap['durationMs'] ?? 0),
+            restSeconds: exerciseMap['restSeconds'] ?? 45,
+            instructions: exerciseMap['instructions'],
+          );
+        }).toList() ?? const <ExerciseEntity>[];
+
+        result.add(WorkoutEntity(
+          id: map['id'] ?? '',
+          name: map['name'] ?? '',
+          duration: Duration(milliseconds: map['durationMs'] ?? 0),
+          exercises: exercisesList,
+          calories: (map['calories'] as num?)?.toDouble() ?? 0.0,
+          steps: (map['steps'] as num?)?.toInt() ?? 0,
+          iconCodePoint: (map['iconCodePoint'] as num?)?.toInt() ?? 0,
+          type: map['type'] ?? 'cardio',
+        ));
+      }
+      return result;
+    } catch (e) {
+      print('Lỗi get workout plans: $e');
+      return [];
+    }
+  }
+
   Future<List<WorkoutEntity>> getAllWorkouts() async {
     if (_prefs == null) {
       await _init();
     }
     return List.unmodifiable(_storage);
+  }
+
+  Future<void> deleteWorkout(String id) async {
+    if (_prefs == null) await _init();
+    _storage.removeWhere((w) => w.id == id);
+    
+    // Lưu lại
+    try {
+      final list = <String>[];
+      for (final workout in _storage) {
+        final workoutJson = jsonEncode({
+          'id': workout.id,
+          'name': workout.name,
+          'durationMs': workout.duration.inMilliseconds,
+          'calories': workout.calories,
+          'steps': workout.steps,
+          'iconCodePoint': workout.iconCodePoint,
+          'type': workout.type,
+          'exercises': workout.exercises.map((e) => {
+            'id': e.id,
+            'name': e.name,
+            'sets': e.sets,
+            'reps': e.reps,
+            'durationMs': e.duration.inMilliseconds,
+            'restSeconds': e.restSeconds,
+          }).toList(),
+        });
+        list.add(workoutJson);
+      }
+      await _prefs!.setStringList('workouts_history', list);
+    } catch (e) {
+      print('Lỗi delete workout: $e');
+    }
   }
 }

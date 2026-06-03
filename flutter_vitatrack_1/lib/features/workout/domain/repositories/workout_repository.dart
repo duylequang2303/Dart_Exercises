@@ -14,4 +14,7 @@ abstract class WorkoutRepository {
   });
   Future<void> updateProgress(Duration elapsed);
   Future<List<WorkoutEntity>> getHistory();
+  Future<void> deleteWorkout(String id);
+  Future<void> saveWorkoutPlan(WorkoutEntity plan);
+  Future<List<WorkoutEntity>> getWorkoutPlans();
 }

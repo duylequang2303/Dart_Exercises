@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_vitatrack_1/core/theme.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_vitatrack_1/features/AI_Coach/presentation/providers/ai_coach_dependencies_provider.dart';
@@ -91,46 +92,58 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
             ),
           ),
 
-          // Nút nhận diện AI
+          // Nút nhận diện AI & Nhập tay
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: GestureDetector(
-              onTap: _openAiCamera,
-              child: Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [
-                    VitaTrackTheme.mauChinh.withValues(alpha: 0.15),
-                    VitaTrackTheme.mauPhu.withValues(alpha: 0.15),
-                  ]),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                      color: VitaTrackTheme.mauChinh.withValues(alpha: 0.4)),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.camera_alt_rounded,
-                        color: VitaTrackTheme.mauChinh, size: 22),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: _openAiCamera,
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(colors: [
+                          VitaTrackTheme.mauChinh.withValues(alpha: 0.15),
+                          VitaTrackTheme.mauPhu.withValues(alpha: 0.15),
+                        ]),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: VitaTrackTheme.mauChinh.withValues(alpha: 0.4)),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text('Chụp ảnh nhận diện AI',
-                              style: TextStyle(
-                                  color: VitaTrackTheme.mauChu,
-                                  fontWeight: FontWeight.bold)),
-                          Text('Tự động tính calo từ ảnh món ăn',
-                              style: TextStyle(
-                                  color: VitaTrackTheme.mauChuPhu, fontSize: 12)),
+                          Icon(Icons.camera_alt_rounded, color: VitaTrackTheme.mauChinh, size: 20),
+                          SizedBox(width: 8),
+                          Text('Quét AI', style: TextStyle(color: VitaTrackTheme.mauChu, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
-                    Icon(Icons.arrow_forward_ios_rounded,
-                        color: VitaTrackTheme.mauChinh, size: 14),
-                  ],
+                  ),
                 ),
-              ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _showManualEntryDialog(),
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: VitaTrackTheme.mauCard,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: VitaTrackTheme.mauCardNhat),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.edit_note_rounded, color: VitaTrackTheme.mauChinh, size: 20),
+                          SizedBox(width: 8),
+                          Text('Nhập tự do', style: TextStyle(color: VitaTrackTheme.mauChu, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
 
@@ -409,6 +422,121 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
       ),
     );
   }
+
+  void _showManualEntryDialog() {
+    final nameController = TextEditingController();
+    final calController = TextEditingController();
+    
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            bool isEstimating = false;
+
+            return Container(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: VitaTrackTheme.mauCard,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Nhập thức ăn tự do', style: TextStyle(color: VitaTrackTheme.mauChu, fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: nameController,
+                    style: const TextStyle(color: VitaTrackTheme.mauChu),
+                    decoration: InputDecoration(
+                      labelText: 'Tên món ăn (Ví dụ: Cơm canh thập cẩm)',
+                      labelStyle: const TextStyle(color: VitaTrackTheme.mauChuPhu),
+                      filled: true,
+                      fillColor: VitaTrackTheme.mauNen,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                      suffixIcon: isEstimating
+                          ? const Padding(padding: EdgeInsets.all(12), child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+                          : IconButton(
+                              icon: const Icon(Icons.auto_awesome, color: VitaTrackTheme.mauChinh),
+                              tooltip: 'AI Ước tính Calo',
+                              onPressed: () async {
+                                final query = nameController.text.trim();
+                                if (query.isEmpty) return;
+                                
+                                setModalState(() => isEstimating = true);
+                                try {
+                                  final groqKey = dotenv.env['GROQ_API_KEY'] ?? '';
+                                  final dataSource = ref.read(foodApiDataSourceProvider);
+                                  final results = await dataSource.estimateByAI(query, groqKey);
+                                  
+                                  if (results.isNotEmpty) {
+                                    calController.text = results.first.calo.toString();
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('AI không thể ước tính món này')));
+                                  }
+                                } catch (e) {
+                                  final errorMsg = e.toString().replaceAll('Exception: ', '');
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMsg)));
+                                } finally {
+                                  if (mounted) setModalState(() => isEstimating = false);
+                                }
+                              },
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: calController,
+                    keyboardType: TextInputType.number,
+                    style: const TextStyle(color: VitaTrackTheme.mauChu),
+                    decoration: InputDecoration(
+                      labelText: 'Lượng Calo (kcal)',
+                      labelStyle: const TextStyle(color: VitaTrackTheme.mauChuPhu),
+                      filled: true,
+                      fillColor: VitaTrackTheme.mauNen,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: VitaTrackTheme.mauThanhCong,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () {
+                        final name = nameController.text.trim();
+                        final calo = int.tryParse(calController.text.trim()) ?? 0;
+                        if (name.isEmpty || calo <= 0) return;
+                        
+                        ref.read(nutritionProvider.notifier).themMonAn(
+                          calo, 0, 0, 0,
+                          tenMonAn: name,
+                        );
+                        Navigator.pop(ctx); // Đóng bottom sheet
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã thêm món ăn!'), behavior: SnackBarBehavior.floating));
+                          Navigator.pop(context); // Quay về màn hình dinh dưỡng chính
+                        }
+                      },
+                      child: const Text('Lưu món ăn', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
 }
 
 class _AiCameraSheet extends ConsumerStatefulWidget {
@@ -422,6 +550,7 @@ class _AiCameraSheet extends ConsumerStatefulWidget {
 class _AiCameraSheetState extends ConsumerState<_AiCameraSheet> {
   int _step = 0; // 0: loading, 1: success, 2: error
   Map<String, dynamic> _result = {};
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -443,6 +572,7 @@ class _AiCameraSheetState extends ConsumerState<_AiCameraSheet> {
       if (mounted) {
         setState(() {
           _step = 2;
+          _errorMessage = e.toString().replaceAll('GroqApiException: ', '').replaceAll('GeminiApiException: ', '');
         });
       }
     }
@@ -482,20 +612,20 @@ class _AiCameraSheetState extends ConsumerState<_AiCameraSheet> {
         const SizedBox(height: 12),
         const Icon(Icons.error_outline_rounded, color: VitaTrackTheme.mauNguyHiem, size: 48),
         const SizedBox(height: 18),
-        const Text('Lỗi phân tích món ăn',
+        const Text('Lỗi phân tích',
             style: TextStyle(
                 color: VitaTrackTheme.mauChu,
                 fontSize: 16,
                 fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
-        const Text('Vui lòng thử chụp lại ảnh rõ nét hơn.',
-            style: TextStyle(color: VitaTrackTheme.mauChuPhu, fontSize: 13)),
-        const SizedBox(height: 18),
+        Text(_errorMessage ?? 'Vui lòng thử chụp lại ảnh rõ nét hơn.',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: VitaTrackTheme.mauChuPhu, fontSize: 13)),
+        const SizedBox(height: 24),
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
-                backgroundColor: VitaTrackTheme.mauChinh,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12))),

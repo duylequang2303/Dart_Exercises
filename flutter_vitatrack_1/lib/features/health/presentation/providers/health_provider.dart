@@ -13,13 +13,8 @@ class HealthNotifier extends StateNotifier<HealthMetric> {
   HealthNotifier(this._pedometer)
       : super(const HealthMetric(steps: 0, heartRate: 72, sleepHours: 7.5)) {
     
-    // Giả lập biến động nhịp tim nhẹ sinh động từ 70 - 85 bpm
-    _heartRateTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      if (mounted) {
-        final newHeartRate = 70 + _random.nextInt(16);
-        state = state.copyWith(heartRate: newHeartRate);
-      }
-    });
+    // Không giả lập nhịp tim ngẫu nhiên nữa vì người dùng đánh giá là vô ích (phế)
+    // _heartRateTimer = Timer.periodic(...)
 
     // Lắng nghe dữ liệu THẬT từ cảm biến đếm bước
     _pedometer.startListening(

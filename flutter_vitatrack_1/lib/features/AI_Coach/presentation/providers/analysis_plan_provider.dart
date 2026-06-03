@@ -6,6 +6,7 @@ import 'ai_coach_dependencies_provider.dart';
 import 'package:flutter_vitatrack_1/features/health/presentation/providers/health_provider.dart';
 import 'package:flutter_vitatrack_1/features/nutrition/presentation/providers/nutrition_provider.dart';
 import 'package:flutter_vitatrack_1/features/profile/presentation/providers/profile_provider.dart';
+import 'package:flutter_vitatrack_1/features/workout/presentation/providers/workout_timer_provider.dart';
 
 // ─── Health Context (từ data thật) ───────────────────────────
 
@@ -48,11 +49,22 @@ final userHealthContextProvider = Provider<UserHealthContext>((ref) {
       _          => tdee.toInt(),
     };
   }
+  
+  final historyAsync = ref.watch(workoutHistoryProvider);
+  final workouts = historyAsync.value ?? [];
+  final now = DateTime.now();
+  
+  int calBurned = 0;
+  for (final w in workouts) {
+    if (w.date.year == now.year && w.date.month == now.month && w.date.day == now.day) {
+      calBurned += w.calories.toInt();
+    }
+  }
 
   return UserHealthContext(
     stepsToday: health.steps,
     caloriesBurned: nutrition.caloDaNap,
-    activeCaloriesBurned: 0, // Tính sau
+    activeCaloriesBurned: calBurned,
     waterIntakeMl: nutrition.soLyNuoc * 250,
     sleepHours: health.sleepHours == 0.0 ? 7.5 : health.sleepHours,
     heartRateBpm: health.heartRate == 0 ? 72 : health.heartRate,
@@ -89,7 +101,45 @@ class HealthAnalysisNotifier extends AsyncNotifier<HealthAnalysis> {
   Future<HealthAnalysis> _fetchAnalysis() async {
     final useCase = ref.read(getHealthAnalysisUseCaseProvider);
     final context = ref.read(userHealthContextProvider);
-    return useCase.execute(context);
+    final aiResult = await useCase.execute(context);
+    
+    // Tính toán weeklyActivity thật từ lịch sử
+    final historyAsync = ref.read(workoutHistoryProvider);
+    final workouts = historyAsync.value ?? [];
+    final now = DateTime.now();
+    final Map<String, int> realActivity = {};
+    
+    for (int i = 6; i >= 0; i--) {
+      final date = now.subtract(Duration(days: i));
+      final weekdayStr = switch (date.weekday) {
+        1 => 'T2', 2 => 'T3', 3 => 'T4', 4 => 'T5',
+        5 => 'T6', 6 => 'T7', 7 => 'CN', _ => ''
+      };
+      
+      double cal = 0;
+      for (var w in workouts) {
+        if (w.date.year == date.year && w.date.month == date.month && w.date.day == date.day) {
+          cal += w.calories;
+        }
+      }
+      
+      // Giả sử mục tiêu đốt 300 kcal = 100%
+      int percent = ((cal / 300.0) * 100).toInt().clamp(0, 100);
+      realActivity[weekdayStr] = percent;
+    }
+
+    return HealthAnalysis(
+      summary: aiResult.summary,
+      diemTot: aiResult.diemTot,
+      canCaiThien: aiResult.canCaiThien,
+      bmiDanhGia: aiResult.bmiDanhGia,
+      sleepQualityChange: aiResult.sleepQualityChange,
+      waterIntake: aiResult.waterIntake,
+      waterRemaining: aiResult.waterRemaining,
+      caloriesBurned: aiResult.caloriesBurned,
+      caloriesGoalPercent: aiResult.caloriesGoalPercent,
+      weeklyActivity: realActivity,
+    );
   }
 
   Future<void> refresh() async {

@@ -23,6 +23,14 @@ class WorkoutEntity {
     this.type = 'cardio',
   });
 
+  DateTime get date {
+    final ms = int.tryParse(id);
+    if (ms != null) {
+      return DateTime.fromMillisecondsSinceEpoch(ms);
+    }
+    return DateTime.now(); // Fallback if id is not a timestamp
+  }
+
   WorkoutEntity copyWith({
     String? id,
     String? name,

@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
 
 import '../../data/datasources/groq_api_datasource.dart';
+import '../../data/datasources/ai_planner_datasource.dart';
 import '../../data/datasources/local_storage_datasource.dart';
 import '../../data/repositories/ai_coach_repository_impl.dart';
 import '../../domain/repositories/ai_coach_repository.dart';
@@ -44,6 +45,10 @@ final groqApiDataSourceProvider = Provider<GroqApiDataSource>((ref) {
     geminiModel: kGeminiModel,
     dio: ref.watch(dioProvider),
   );
+});
+
+final aiPlannerDataSourceProvider = Provider<AiPlannerDataSource>((ref) {
+  return AiPlannerDataSource();
 });
 
 final localStorageDataSourceProvider = Provider<LocalStorageDataSource>((ref) {

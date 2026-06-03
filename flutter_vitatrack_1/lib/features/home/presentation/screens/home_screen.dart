@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_vitatrack_1/features/health/presentation/providers/health_provider.dart';
 import 'package:flutter_vitatrack_1/features/auth/presentation/providers/auth_provider.dart';
 import 'package:flutter_vitatrack_1/features/nutrition/presentation/providers/nutrition_provider.dart';
+import 'package:flutter_vitatrack_1/features/home/presentation/widgets/ai_assistant_widget.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -78,6 +79,9 @@ class HomeScreen extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 32),
+              
+              // ===== TRỢ LÝ AI =====
+              const AiAssistantWidget(),
 
               // ===== CARD MỤC TIÊU HÔM NAY (CARD LỚN) =====
               Container(
