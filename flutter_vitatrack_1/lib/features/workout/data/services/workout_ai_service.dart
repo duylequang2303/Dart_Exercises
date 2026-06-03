@@ -87,45 +87,8 @@ Lưu ý:
       return map;
     } catch (e) {
       print('Lỗi WorkoutAiService.parseWorkoutPlan: $e');
-      // Trả về giáo án fallback an toàn nếu gặp sự cố API
-      return _getFallbackPlan(userInput);
+      throw Exception('Không thể tạo giáo án: $e');
     }
-  }
-
-  Map<String, dynamic> _getFallbackPlan(String input) {
-    final lower = input.toLowerCase();
-    if (lower.contains('chạy') || lower.contains('run') || lower.contains('bộ') || lower.contains('đi') || lower.contains('walk')) {
-      return {
-        'type': 'cardio',
-        'standardName': input,
-        'exercises': <Map<String, dynamic>>[],
-      };
-    }
-    if (lower.contains('đạp') || lower.contains('bike') || lower.contains('cycling')) {
-      return {
-        'type': 'cardio',
-        'standardName': 'Đạp xe thể lực',
-        'exercises': <Map<String, dynamic>>[],
-      };
-    }
-    if (lower.contains('bơi') || lower.contains('swim')) {
-      return {
-        'type': 'cardio',
-        'standardName': 'Bơi lội tự do',
-        'exercises': <Map<String, dynamic>>[],
-      };
-    }
-    
-    // Mặc định là strength bài tập tạ/gym
-    return {
-      'type': 'strength',
-      'standardName': input.isNotEmpty ? input : 'Tập Gym / Sức mạnh',
-      'exercises': [
-        {'name': 'Hít đất (Push Ups)', 'sets': 3, 'reps': 12, 'restSeconds': 45, 'durationSeconds': 0},
-        {'name': 'Squats (Gánh đùi)', 'sets': 3, 'reps': 15, 'restSeconds': 45, 'durationSeconds': 0},
-        {'name': 'Plank', 'sets': 3, 'reps': 0, 'restSeconds': 45, 'durationSeconds': 45},
-      ],
-    };
   }
 
   String _extractJson(String text) {

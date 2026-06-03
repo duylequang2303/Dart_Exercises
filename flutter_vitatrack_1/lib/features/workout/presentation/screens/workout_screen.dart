@@ -43,6 +43,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
     try {
       final result = await ref.read(workoutAiServiceProvider).parseWorkoutPlan(query);
       if (!mounted) return;
+      if (!_isSearching) return; // Người dùng đã ấn hủy
 
       final exercisesData = result['exercises'] as List<dynamic>?;
       final List<ExerciseEntity> list = exercisesData?.map((e) {
@@ -176,7 +177,6 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
               const SizedBox(height: 16),
               _buildStartChoice(sheetContext, Icons.directions_run, 'Chạy bộ ngoài trời', VitaTrackTheme.mauChinh),
               _buildStartChoice(sheetContext, Icons.pedal_bike, 'Đạp xe', VitaTrackTheme.mauThanhCong),
-              _buildStartChoice(sheetContext, Icons.fitness_center, 'Tập Gym / Sức mạnh', VitaTrackTheme.mauNguyHiem),
               const SizedBox(height: 16),
             ],
           ),
@@ -340,6 +340,15 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
                   const CircularProgressIndicator(color: VitaTrackTheme.mauChinh),
                   const SizedBox(height: 12),
                   const Text('AI đang thiết lập giáo án riêng cho bạn...', style: TextStyle(color: VitaTrackTheme.mauChuPhu, fontSize: 13)),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _isSearching = false;
+                      });
+                    },
+                    child: const Text('Hủy', style: TextStyle(color: VitaTrackTheme.mauNguyHiem, fontWeight: FontWeight.bold)),
+                  ),
                 ],
               ),
             ),

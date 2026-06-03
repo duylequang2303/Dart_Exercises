@@ -23,7 +23,7 @@ final String kGeminiApiKey = (dotenv.env['GEMINI_API_KEY']?.isNotEmpty == true)
     : 'AIzaSyD1DMq-uj6t_kbPgPZYywA4C_fN9RW5blM';
 final String kGeminiModel = (dotenv.env['GEMINI_MODEL']?.isNotEmpty == true)
     ? dotenv.env['GEMINI_MODEL']!
-    : 'gemini-2.5-flash';
+    : 'gemini-pro';
 
 // ─── Infrastructure ───────────────────────────────────────────
 

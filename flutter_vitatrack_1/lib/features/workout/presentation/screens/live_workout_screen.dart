@@ -386,21 +386,31 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen> with Tick
             children: [
               // Nút Thoát hiểm
               GestureDetector(
-                onLongPressStart: (_) {
+                onTap: () {
                   HapticFeedback.lightImpact();
-                  _holdController.forward();
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      backgroundColor: VitaTrackTheme.mauCard,
+                      title: const Text('Thoát bài tập?', style: TextStyle(color: VitaTrackTheme.mauChu)),
+                      content: const Text('Bạn có chắc chắn muốn kết thúc bài tập này sớm không?', style: TextStyle(color: VitaTrackTheme.mauChuPhu)),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Hủy', style: TextStyle(color: VitaTrackTheme.mauChuPhu))),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            _endWorkout();
+                          },
+                          child: const Text('Kết thúc', style: TextStyle(color: VitaTrackTheme.mauNguyHiem, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                  );
                 },
-                onLongPressEnd: (_) => _holdController.reverse(),
                 child: Container(
                   width: 60, height: 60,
                   decoration: const BoxDecoration(color: VitaTrackTheme.mauCard, shape: BoxShape.circle),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      CircularProgressIndicator(value: _holdController.value, color: VitaTrackTheme.mauNguyHiem, strokeWidth: 4, backgroundColor: Colors.transparent),
-                      const Icon(Icons.close, color: VitaTrackTheme.mauNguyHiem),
-                    ],
-                  ),
+                  child: const Center(child: Icon(Icons.close, color: VitaTrackTheme.mauNguyHiem)),
                 ),
               ),
               const SizedBox(width: 16),
