@@ -638,29 +638,63 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen> with Tick
           padding: const EdgeInsets.only(bottom: 60),
           child: Column(
             children: [
-              GestureDetector(
-                onTapDown: (_) {
-                  if (!_ended) {
-                    HapticFeedback.lightImpact();
-                    _holdController.forward();
-                  }
-                },
-                onTapUp: (_) { if (!_ended) _holdController.reverse(); },
-                onTapCancel: () { if (!_ended) _holdController.reverse(); },
-                child: SizedBox(
-                  width: 100, height: 100,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      const CircularProgressIndicator(value: 1.0, strokeWidth: 6, color: VitaTrackTheme.mauCard),
-                      CircularProgressIndicator(value: _holdController.value, strokeWidth: 8, backgroundColor: Colors.transparent, color: VitaTrackTheme.mauNguyHiem, strokeCap: StrokeCap.round),
-                      Container(width: 70, height: 70, decoration: BoxDecoration(color: VitaTrackTheme.mauNguyHiem, shape: BoxShape.circle), child: const Icon(Icons.stop_rounded, color: VitaTrackTheme.mauNen, size: 36)),
-                    ],
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (liveState.isPaused)
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: VitaTrackTheme.mauThanhCong,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                      ),
+                      onPressed: () {
+                        ref.read(liveWorkoutProvider.notifier).resume();
+                        ref.read(workoutElapsedProvider.notifier).resume();
+                      },
+                      icon: const Icon(Icons.play_arrow, color: VitaTrackTheme.mauNen),
+                      label: const Text('TIẾP TỤC TẬP', style: TextStyle(color: VitaTrackTheme.mauNen, fontWeight: FontWeight.bold)),
+                    )
+                  else
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: VitaTrackTheme.mauCanhBao,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                      ),
+                      onPressed: () {
+                        ref.read(liveWorkoutProvider.notifier).pause();
+                        ref.read(workoutElapsedProvider.notifier).pause();
+                      },
+                      icon: const Icon(Icons.pause, color: VitaTrackTheme.mauNen),
+                      label: const Text('NGHỈ GIỮA CHẶNG', style: TextStyle(color: VitaTrackTheme.mauNen, fontWeight: FontWeight.bold)),
+                    ),
+                  const SizedBox(width: 24),
+                  GestureDetector(
+                    onTapDown: (_) {
+                      if (!_ended) {
+                        HapticFeedback.lightImpact();
+                        _holdController.forward();
+                      }
+                    },
+                    onTapUp: (_) { if (!_ended) _holdController.reverse(); },
+                    onTapCancel: () { if (!_ended) _holdController.reverse(); },
+                    child: SizedBox(
+                      width: 80, height: 80,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          const CircularProgressIndicator(value: 1.0, strokeWidth: 4, color: VitaTrackTheme.mauCard),
+                          CircularProgressIndicator(value: _holdController.value, strokeWidth: 6, backgroundColor: Colors.transparent, color: VitaTrackTheme.mauNguyHiem, strokeCap: StrokeCap.round),
+                          Container(width: 56, height: 56, decoration: BoxDecoration(color: VitaTrackTheme.mauNguyHiem, shape: BoxShape.circle), child: const Icon(Icons.stop_rounded, color: VitaTrackTheme.mauNen, size: 28)),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
               const SizedBox(height: 16),
-              AnimatedOpacity(opacity: _holdController.value > 0 ? 0.0 : 1.0, duration: const Duration(milliseconds: 200), child: const Text('Nhấn giữ để kết thúc', style: TextStyle(color: VitaTrackTheme.mauChuPhu))),
+              AnimatedOpacity(opacity: _holdController.value > 0 ? 0.0 : 1.0, duration: const Duration(milliseconds: 200), child: const Text('Nhấn giữ nút đỏ để kết thúc', style: TextStyle(color: VitaTrackTheme.mauChuPhu))),
             ],
           ),
         )

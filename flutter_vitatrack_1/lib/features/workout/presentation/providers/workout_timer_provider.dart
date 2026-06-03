@@ -77,6 +77,14 @@ class WorkoutTimerNotifier extends StateNotifier<Duration> {
     _service.start();
   }
 
+  void pause() {
+    _service.pause();
+  }
+
+  void resume() {
+    _service.start();
+  }
+
   Future<void> stop({
     String name = 'Bài tập',
     double calories = 0.0,

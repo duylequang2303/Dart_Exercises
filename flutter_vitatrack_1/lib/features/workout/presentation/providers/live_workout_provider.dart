@@ -11,24 +11,17 @@ class LiveWorkoutState {
   /// Loại bài tập có tính theo bước chân không (chạy/đi bộ)
   final bool isStepBased;
 
-  /// Số bước chân lúc bắt đầu bài tập (snapshot từ pedometer)
-  final int initialSteps;
-
-  /// Số bước chân hiện tại từ pedometer
-  final int currentSteps;
-
-  /// Nhịp tim hiện tại (mô phỏng dao động nhỏ)
-  final int heartRate;
+  final int activeSteps;
+  final bool isPaused;
 
   const LiveWorkoutState({
     this.isStepBased = false,
-    this.initialSteps = 0,
-    this.currentSteps = 0,
-    this.heartRate = 72,
+    this.activeSteps = 0,
+    this.isPaused = false,
   });
 
-  /// Số bước chân đã đi trong lúc tập
-  int get stepsDelta => (currentSteps - initialSteps).clamp(0, 999999);
+  /// Số bước chân đã đi trong lúc tập (không tính lúc tạm dừng)
+  int get stepsDelta => activeSteps;
 
   /// Calo tiêu hao thực tế:
   /// - Bài tập bước chân (chạy/đi bộ): stepsDelta * 0.04 kcal/bước
@@ -37,8 +30,6 @@ class LiveWorkoutState {
     if (isStepBased) {
       return stepsDelta * 0.04;
     } else {
-      // Với đạp xe/kháng lực: ước tính 0.1 kcal/bước dao động cơ thể;
-      // nếu hoàn toàn đứng yên (stepsDelta == 0) => 0 calo
       return stepsDelta * 0.1;
     }
   }
@@ -48,15 +39,13 @@ class LiveWorkoutState {
 
   LiveWorkoutState copyWith({
     bool? isStepBased,
-    int? initialSteps,
-    int? currentSteps,
-    int? heartRate,
+    int? activeSteps,
+    bool? isPaused,
   }) {
     return LiveWorkoutState(
       isStepBased: isStepBased ?? this.isStepBased,
-      initialSteps: initialSteps ?? this.initialSteps,
-      currentSteps: currentSteps ?? this.currentSteps,
-      heartRate: heartRate ?? this.heartRate,
+      activeSteps: activeSteps ?? this.activeSteps,
+      isPaused: isPaused ?? this.isPaused,
     );
   }
 }
@@ -67,48 +56,48 @@ class LiveWorkoutState {
 
 class LiveWorkoutNotifier extends StateNotifier<LiveWorkoutState> {
   final Ref _ref;
-  Timer? _heartRateTimer;
-  final Random _random = Random();
+  int _lastHealthSteps = 0;
 
   LiveWorkoutNotifier(this._ref) : super(const LiveWorkoutState());
 
-  /// Gọi khi màn hình khởi tạo - snapshot số bước hiện tại làm điểm xuất phát
+  /// Gọi khi màn hình khởi tạo
   void init(String tenBaiTap) {
-    final currentSteps = _ref.read(healthProvider).steps;
+    _lastHealthSteps = _ref.read(healthProvider).steps;
     final isStepBased = _isStepBasedWorkout(tenBaiTap);
 
     state = LiveWorkoutState(
       isStepBased: isStepBased,
-      initialSteps: currentSteps,
-      currentSteps: currentSteps,
-      heartRate: isStepBased ? 100 : 72,
+      activeSteps: 0,
+      isPaused: false,
     );
-
-    // Giả lập dao động nhịp tim (không fake hẳn như cũ, chỉ dao động ±10 bpm xung quanh ngưỡng tương ứng)
-    final baseHr = isStepBased ? 130 : 90;
-    _heartRateTimer = Timer.periodic(const Duration(seconds: 3), (_) {
-      if (mounted) {
-        final newHr = baseHr + _random.nextInt(20) - 10;
-        state = state.copyWith(heartRate: newHr);
-      }
-    });
   }
 
-  /// Gọi mỗi khi pedometer cập nhật bước chân (đọc từ healthProvider)
+  void pause() {
+    if (mounted) state = state.copyWith(isPaused: true);
+  }
+
+  void resume() {
+    if (mounted) state = state.copyWith(isPaused: false);
+  }
+
+  /// Gọi mỗi khi pedometer cập nhật bước chân
   void updateSteps(int steps) {
     if (mounted) {
-      state = state.copyWith(currentSteps: steps);
+      final delta = steps - _lastHealthSteps;
+      _lastHealthSteps = steps;
+      
+      if (!state.isPaused && delta > 0) {
+        state = state.copyWith(activeSteps: state.activeSteps + delta);
+      }
     }
   }
 
   void reset() {
-    _heartRateTimer?.cancel();
     state = const LiveWorkoutState();
   }
 
   @override
   void dispose() {
-    _heartRateTimer?.cancel();
     super.dispose();
   }
 

@@ -27,7 +27,13 @@ class WorkoutTimerService {
     });
   }
 
-  /// Stop (pause) the main timer.
+  /// Stop (pause) the main timer without resetting elapsed.
+  void pause() {
+    _timer?.cancel();
+    _timer = null;
+  }
+
+  /// Stop entirely.
   void stop() {
     _timer?.cancel();
     _timer = null;
