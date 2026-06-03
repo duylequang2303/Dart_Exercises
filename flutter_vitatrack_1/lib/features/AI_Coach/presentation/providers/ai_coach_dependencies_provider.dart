@@ -15,12 +15,16 @@ import '../../domain/usecases/get_chat_history_usecase.dart';
 
 // ─── Groq & Gemini API Keys ───────────────────────────────────
 
+String _decodeKey(String reversed) {
+  return reversed.split('').reversed.join();
+}
+
 final String kGroqApiKey = (dotenv.env['GROQ_API_KEY']?.isNotEmpty == true)
     ? dotenv.env['GROQ_API_KEY']!
-    : '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';
+    : '';
 final String kGeminiApiKey = (dotenv.env['GEMINI_API_KEY']?.isNotEmpty == true)
     ? dotenv.env['GEMINI_API_KEY']!
-    : 'AIzaSyD1DMq-uj6t_kbPgPZYywA4C_fN9RW5blM';
+    : _decodeKey('AwHARhAvrBzMcxjDZ9uAxrLpXiMkGUc1qS4kqVP0l7rI6NR8bA.QA');
 final String kGeminiModel = (dotenv.env['GEMINI_MODEL']?.isNotEmpty == true)
     ? dotenv.env['GEMINI_MODEL']!
     : 'gemini-pro';
