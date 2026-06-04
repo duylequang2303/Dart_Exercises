@@ -9,10 +9,10 @@ class MealPlanBottomSheetContent extends ConsumerStatefulWidget {
   final int targetCalo;
 
   const MealPlanBottomSheetContent({
-    Key? key,
+    super.key,
     required this.initialMeals,
     required this.targetCalo,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<MealPlanBottomSheetContent> createState() => _MealPlanBottomSheetContentState();
@@ -179,6 +179,14 @@ class _MealPlanBottomSheetContentState extends ConsumerState<MealPlanBottomSheet
                   ],
                 ),
                 const SizedBox(height: 16),
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 8.0),
+                  child: Text(
+                    "Chỉ nhấn 'Đã ăn xong' khi bạn thực sự đã ăn những món này.",
+                    style: TextStyle(color: VitaTrackTheme.mauChuPhu, fontSize: 12, fontStyle: FontStyle.italic),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
                 Row(
                   children: [
                     Expanded(
@@ -188,13 +196,16 @@ class _MealPlanBottomSheetContentState extends ConsumerState<MealPlanBottomSheet
                           side: const BorderSide(color: VitaTrackTheme.mauCardNhat),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Hủy', style: TextStyle(color: VitaTrackTheme.mauChuPhu)),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã lưu kế hoạch! Ghi lại thực tế sau khi ăn xong nhé.')));
+                        },
+                        child: const Text('Lưu kế hoạch', style: TextStyle(color: VitaTrackTheme.mauChuPhu, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      flex: 2,
+                      flex: 1,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: VitaTrackTheme.mauThanhCong,
@@ -217,7 +228,7 @@ class _MealPlanBottomSheetContentState extends ConsumerState<MealPlanBottomSheet
                             }
                             if (!mounted) return;
                             Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã áp dụng thực đơn vào nhật ký!'), backgroundColor: VitaTrackTheme.mauThanhCong));
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã ghi vào nhật ký dinh dưỡng hôm nay!'), backgroundColor: VitaTrackTheme.mauThanhCong));
                           } catch (e) {
                             if (!mounted) return;
                             setState(() => _isRegenerating = false);
@@ -226,7 +237,7 @@ class _MealPlanBottomSheetContentState extends ConsumerState<MealPlanBottomSheet
                         },
                         child: _isRegenerating 
                             ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                            : const Text('Áp dụng ngay', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                            : const Text('Đã ăn xong, ghi lại', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
                       ),
                     ),
                   ],

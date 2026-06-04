@@ -76,7 +76,6 @@ class ChatNotifier extends StateNotifier<ChatState> {
       activeCaloriesBurned: calBurned,
       waterIntakeMl: nutrition.soLyNuoc * 250, // 250ml mỗi ly
       sleepHours: health.sleepHours, // Lấy thẳng số giờ ngủ từ HealthMetric
-      heartRateBpm: health.heartRate,
       dailyStepsGoal: 10000,
       dailyCaloriesGoal: nutrition.caloMucTieu > 0 ? nutrition.caloMucTieu : 2000,
       dailyWaterGoalMl: 2500,

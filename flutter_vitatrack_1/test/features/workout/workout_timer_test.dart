@@ -1,87 +1,134 @@
-import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_vitatrack_1/features/workout/presentation/services/workout_timer_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_vitatrack_1/features/workout/presentation/providers/workout_timer_provider.dart';
+import 'package:flutter_vitatrack_1/features/workout/domain/usecases/start_workout.dart';
+import 'package:flutter_vitatrack_1/features/workout/domain/usecases/stop_workout.dart';
+import 'package:flutter_vitatrack_1/features/workout/domain/usecases/track_workout_progress.dart';
+import 'package:flutter_vitatrack_1/features/workout/domain/repositories/workout_repository.dart';
+import 'package:flutter_vitatrack_1/features/workout/domain/entities/workout_entity.dart';
+import 'package:flutter_vitatrack_1/features/workout/domain/entities/exercise_entity.dart';
+
+class FakeWorkoutRepository implements WorkoutRepository {
+  @override
+  Future<void> saveWorkout(WorkoutEntity workout) async {}
+  @override
+  Future<List<WorkoutEntity>> getHistory() async => [];
+  @override
+  Future<void> saveWorkoutPlan(WorkoutEntity plan) async {}
+  @override
+  Future<List<WorkoutEntity>> getWorkoutPlans() async => [];
+  @override
+  Future<void> deleteWorkout(String id) async {}
+  @override
+  Future<Map<String, dynamic>> parseWorkoutPlan(String query) async => {};
+  @override
+  Future<void> startWorkout() async {}
+  @override
+  Future<void> stopWorkout(
+    Duration elapsed, {
+    required String name,
+    required double calories,
+    required int steps,
+    required int iconCodePoint,
+    required String type,
+    required List<ExerciseEntity> exercises,
+    String? userId,
+  }) async {}
+  @override
+  Future<void> updateProgress(Duration elapsed) async {}
+}
+
+class FakeRef extends Ref {
+  @override
+  T read<T>(ProviderListenable<T> provider) => throw UnimplementedError();
+  // ignore: missing_return
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 void main() {
-  late WorkoutTimerService timerService;
+  late WorkoutTimerNotifier notifier;
+  late FakeWorkoutRepository repo;
 
   setUp(() {
-    timerService = WorkoutTimerService();
+    repo = FakeWorkoutRepository();
+    final start = StartWorkout(repository: repo);
+    final stop = StopWorkout(repository: repo);
+    final track = TrackWorkoutProgress(repository: repo);
+    notifier = WorkoutTimerNotifier(start, stop, track, () {}, FakeRef());
   });
 
   tearDown(() {
-    timerService.dispose();
+    notifier.dispose();
   });
 
-  test('Khởi tạo WorkoutTimerService với thời gian bằng 0', () {
-    expect(timerService.elapsed, Duration.zero);
+  test('Khởi tạo WorkoutTimerNotifier với thời gian bằng 0', () {
+    expect(notifier.state.elapsed, Duration.zero);
+    expect(notifier.state.isRunning, false);
+    expect(notifier.state.isPaused, false);
   });
 
-  test('start() và stop() quản lý bộ đếm giờ chạy và dừng chính xác', () async {
-    timerService.start();
-
-    // Chờ 1.5 giây để bộ đếm tăng thêm ít nhất 1 giây
+  test('start() chạy timer', () async {
+    await notifier.start();
     await Future.delayed(const Duration(milliseconds: 1500));
-
-    expect(timerService.elapsed.inSeconds, greaterThanOrEqualTo(1));
-
-    final currentElapsed = timerService.elapsed;
-    timerService.stop();
-
-    // Chờ thêm 1.5 giây sau khi stop()
-    await Future.delayed(const Duration(milliseconds: 1500));
-
-    // Thời gian trôi qua không được tăng thêm
-    expect(timerService.elapsed, currentElapsed);
+    expect(notifier.state.elapsed.inSeconds, greaterThanOrEqualTo(1));
+    expect(notifier.state.isRunning, true);
+    expect(notifier.state.isPaused, false);
   });
-
-  test('reset() đưa thời gian trôi qua về 0 và dừng bộ đếm', () async {
-    timerService.start();
+  
+  test('pause() và resume() hoạt động chính xác', () async {
+    await notifier.start();
     await Future.delayed(const Duration(milliseconds: 1200));
-
-    expect(timerService.elapsed.inSeconds, greaterThanOrEqualTo(1));
-
-    timerService.reset();
-    expect(timerService.elapsed, Duration.zero);
-
-    // Đợi thêm để chắc chắn bộ đếm không tự tăng lại
-    await Future.delayed(const Duration(milliseconds: 1200));
-    expect(timerService.elapsed, Duration.zero);
-  });
-
-  test('startCountdown() đếm ngược chính xác và tự kích hoạt bộ đếm giờ chính', () async {
-    final countdownValues = <int?>[];
     
-    final sub = timerService.countdownStream.listen((val) {
-      countdownValues.add(val);
-    });
-
-    // Bắt đầu đếm ngược từ 2 giây
-    timerService.startCountdown(2);
-
-    // Chờ 2.5 giây để hoàn thành đếm ngược và kích hoạt main timer
-    await Future.delayed(const Duration(milliseconds: 2500));
-
-    // Dưới đây là giá trị đếm ngược nhận được: 2 -> 1 -> null
-    expect(countdownValues, contains(2));
-    expect(countdownValues, contains(1));
-    expect(countdownValues.last, null);
-
-    // Sau khi đếm ngược kết thúc, main timer tự chạy
-    expect(timerService.elapsed.inSeconds, greaterThanOrEqualTo(0));
-
-    await sub.cancel();
+    notifier.pause();
+    expect(notifier.state.isPaused, true);
+    expect(notifier.state.isRunning, false);
+    
+    final elapsedAtPause = notifier.state.elapsed;
+    await Future.delayed(const Duration(milliseconds: 1200));
+    expect(notifier.state.elapsed, elapsedAtPause); // Không tăng khi pause
+    
+    notifier.resume();
+    expect(notifier.state.isPaused, false);
+    expect(notifier.state.isRunning, true);
+    await Future.delayed(const Duration(milliseconds: 1200));
+    expect(notifier.state.elapsed, greaterThan(elapsedAtPause));
   });
 
-  test('stopCountdown() dừng đếm ngược và đưa trạng thái về null', () async {
-    timerService.startCountdown(5);
-    await Future.delayed(const Duration(milliseconds: 500));
+  test('stop() kết thúc bài tập', () async {
+    await notifier.start();
+    await Future.delayed(const Duration(milliseconds: 1200));
+    
+    // FakeRef throws when trying to read user info, so we catch it
+    // because stop() tries to read user ID. We can test the state reset directly.
+    try {
+      await notifier.stop();
+    } catch (_) {}
 
-    // Lắng nghe stream TRƯỚC KHI gọi stopCountdown để hứng sự kiện null phát ra
-    final expectFuture = expectLater(timerService.countdownStream, emits(null));
+    expect(notifier.state.isRunning, false);
+    expect(notifier.state.isPaused, false);
+  });
 
-    timerService.stopCountdown();
+  test('reset() đưa trạng thái về mặc định', () async {
+    await notifier.start();
+    await Future.delayed(const Duration(milliseconds: 1200));
+    
+    notifier.reset();
+    expect(notifier.state.elapsed, Duration.zero);
+    expect(notifier.state.isRunning, false);
+  });
 
-    await expectFuture;
+  test('startCountdown() đếm ngược chính xác', () async {
+    notifier.startCountdown(2);
+    expect(notifier.state.countdown, const Duration(seconds: 2));
+    
+    await Future.delayed(const Duration(milliseconds: 1200));
+    expect(notifier.state.countdown, const Duration(seconds: 1));
+    
+    await Future.delayed(const Duration(milliseconds: 1200));
+    expect(notifier.state.countdown, null);
+    
+    // Tự động start sau khi countdown
+    expect(notifier.state.isRunning, true);
   });
 }

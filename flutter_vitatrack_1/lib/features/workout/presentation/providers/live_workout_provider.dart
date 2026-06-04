@@ -1,5 +1,3 @@
-import 'dart:async';
-import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_vitatrack_1/features/health/presentation/providers/health_provider.dart';
 
@@ -96,10 +94,6 @@ class LiveWorkoutNotifier extends StateNotifier<LiveWorkoutState> {
     state = const LiveWorkoutState();
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
 
   bool _isStepBasedWorkout(String name) {
     final lower = name.toLowerCase();

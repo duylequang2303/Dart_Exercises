@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Validate authenticated access where required
+    match /users/{userId} {
+      // Allow read/write only if the authenticated user's UID matches the document's userId.
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      // 2. Users may only access their own data
+      // 3. Users cannot read other users' nutrition records
+      // 4. Users cannot read other users' workout records
+      // 5. Users cannot modify other users' documents
+      // This wildcard matches any subcollections under the user's document (profile, nutrition, workouts, etc.)
+      match /{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+  }
+}

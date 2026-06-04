@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_vitatrack_1/features/health/data/datasources/pedometer_datasource.dart';
@@ -33,6 +32,7 @@ class FakePedometerDatasource extends PedometerDatasource {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   late FakePedometerDatasource fakePedometer;
   late ProviderContainer container;
 
@@ -53,7 +53,6 @@ void main() {
     // Đọc provider trước để khởi tạo notifier
     final healthMetric = container.read(healthProvider);
     expect(healthMetric.steps, 0);
-    expect(healthMetric.heartRate, 72);
     expect(healthMetric.sleepHours, 7.5);
   });
 
@@ -70,20 +69,5 @@ void main() {
     expect(container.read(healthProvider).steps, 2500);
   });
 
-  test('Nhịp tim thay đổi tự động định kỳ', () async {
-    // Khởi tạo notifier
-    container.read(healthProvider);
-    await Future.delayed(Duration.zero);
 
-    final initialHeartRate = container.read(healthProvider).heartRate;
-
-    // Chờ 6 giây (nhịp tim thay đổi mỗi 5 giây theo logic)
-    await Future.delayed(const Duration(seconds: 6));
-
-    final newHeartRate = container.read(healthProvider).heartRate;
-    
-    // Nhịp tim ngẫu nhiên mới nằm trong khoảng 70 - 85 bpm
-    expect(newHeartRate, greaterThanOrEqualTo(70));
-    expect(newHeartRate, lessThanOrEqualTo(85));
-  });
 }

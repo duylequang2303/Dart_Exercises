@@ -4,10 +4,21 @@ import 'package:flutter_vitatrack_1/core/services/firestore_service.dart';
 import 'package:flutter_vitatrack_1/features/nutrition/data/datasources/firestore_nutrition_datasource.dart';
 import 'package:flutter_vitatrack_1/features/nutrition/domain/entities/nutrition.dart';
 import 'package:flutter_vitatrack_1/features/nutrition/presentation/providers/nutrition_provider.dart';
+import 'package:flutter_vitatrack_1/features/nutrition/domain/usecases/get_nutrition_today_usecase.dart';
+import 'package:flutter_vitatrack_1/features/nutrition/domain/usecases/update_water_usecase.dart';
+import 'package:flutter_vitatrack_1/features/nutrition/domain/usecases/add_meal_usecase.dart';
+import 'package:flutter_vitatrack_1/features/nutrition/domain/usecases/delete_meal_usecase.dart';
+import 'package:flutter_vitatrack_1/features/nutrition/data/repositories/nutrition_repository_impl.dart';
 
 class FakeFirestoreService implements FirestoreService {
   @override
-  get _firestore => throw UnimplementedError();
+  Never get _firestore => throw UnimplementedError();
+
+  @override
+  get instance => throw UnimplementedError();
+
+  @override
+  Future<T> runTransaction<T>(Function updateFunction) async => throw UnimplementedError();
 
   @override
   Future<void> deleteDocument(String collection, String docId) async {}
@@ -39,7 +50,7 @@ class FakeFirestoreNutritionDataSource extends FirestoreNutritionDataSource {
   FakeFirestoreNutritionDataSource() : super(FakeFirestoreService());
 
   @override
-  Future<Nutrition> getNutritionToday(String uid) async {
+  Future<Nutrition> getNutritionToday(String uid, {int? caloriesGoal}) async {
     return _currentNutrition;
   }
 
@@ -66,7 +77,7 @@ class FakeFirestoreNutritionDataSource extends FirestoreNutritionDataSource {
   }
 
   @override
-  Future<void> addMeal(String uid, int calo, double protein, double carb, double fat) async {
+  Future<void> addMeal(String uid, int calo, double protein, double carb, double fat, {String? tenMonAn}) async {
     final newMeal = {
       'id': 'meal_id',
       'tenMonAn': 'Bữa ăn thêm',
@@ -89,9 +100,19 @@ void main() {
   late ProviderContainer container;
   const testUid = 'user_123';
 
+  late GetNutritionTodayUseCase getToday;
+  late UpdateWaterUseCase updateWater;
+  late AddMealUseCase addMeal;
+  late DeleteMealUseCase deleteMeal;
+
   setUp(() {
     fakeDataSource = FakeFirestoreNutritionDataSource();
     container = ProviderContainer();
+    final fakeRepo = NutritionRepositoryImpl(fakeDataSource);
+    getToday = GetNutritionTodayUseCase(fakeRepo);
+    updateWater = UpdateWaterUseCase(fakeRepo);
+    addMeal = AddMealUseCase(fakeRepo);
+    deleteMeal = DeleteMealUseCase(fakeRepo);
   });
 
   tearDown(() {
@@ -99,14 +120,14 @@ void main() {
   });
 
   test('Khởi tạo NutritionNotifier với giá trị mặc định bằng 0', () async {
-    final notifier = NutritionNotifier(fakeDataSource, testUid);
+    final notifier = NutritionNotifier(testUid, getToday, updateWater, addMeal, deleteMeal);
     expect(notifier.state.caloDaNap, 0);
     expect(notifier.state.soLyNuoc, 0);
     expect(notifier.state.lichSuBuaAn.length, 0);
   });
 
   test('load() cập nhật đúng trạng thái dinh dưỡng hiện tại', () async {
-    final notifier = NutritionNotifier(fakeDataSource, testUid);
+    final notifier = NutritionNotifier(testUid, getToday, updateWater, addMeal, deleteMeal);
     
     // Tự động load() đã chạy khi khởi tạo, đợi microtask chạy xong
     await Future.delayed(Duration.zero);
@@ -115,7 +136,7 @@ void main() {
   });
 
   test('uongNuoc() tăng số ly nước uống thêm 1', () async {
-    final notifier = NutritionNotifier(fakeDataSource, testUid);
+    final notifier = NutritionNotifier(testUid, getToday, updateWater, addMeal, deleteMeal);
     await Future.delayed(Duration.zero);
 
     await notifier.uongNuoc();
@@ -124,7 +145,7 @@ void main() {
   });
 
   test('botNuoc() giảm số ly nước uống đi 1 nhưng không giảm dưới 0', () async {
-    final notifier = NutritionNotifier(fakeDataSource, testUid);
+    final notifier = NutritionNotifier(testUid, getToday, updateWater, addMeal, deleteMeal);
     await Future.delayed(Duration.zero);
 
     // Giảm khi nước đang bằng 0 -> Vẫn bằng 0
@@ -139,7 +160,7 @@ void main() {
   });
 
   test('themMonAn() tăng calo nạp và thêm bữa ăn vào lịch sử', () async {
-    final notifier = NutritionNotifier(fakeDataSource, testUid);
+    final notifier = NutritionNotifier(testUid, getToday, updateWater, addMeal, deleteMeal);
     await Future.delayed(Duration.zero);
 
     await notifier.themMonAn(500, 20.0, 50.0, 10.0);

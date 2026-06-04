@@ -17,17 +17,36 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   late PageController _pageController;
+  late TextEditingController _heightController;
+  late TextEditingController _weightController;
+  late TextEditingController _ageController;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
+    _heightController = TextEditingController(text: '170');
+    _weightController = TextEditingController(text: '65');
+    _ageController = TextEditingController(text: '25');
   }
 
   @override
   void dispose() {
     _pageController.dispose();
+    _heightController.dispose();
+    _weightController.dispose();
+    _ageController.dispose();
     super.dispose();
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg, style: const TextStyle(color: Colors.white)),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
@@ -50,6 +69,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   _stepChonMucTieu(state, notifier),
                   _stepChonGioiTinh(state, notifier),
                   _stepNhapThongSo(state, notifier),
+                  _stepNhapTuoi(state, notifier),
                   _stepChonCuongDo(state, notifier),
                   _stepHoanThanh(state, notifier),
                 ],
@@ -63,7 +83,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Widget _buildHeader(OnboardingState state, BuildContext context) {
-    double progress = (state.currentPage + 1) / 5;
+    double progress = (state.currentPage + 1) / 6;
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Column(
@@ -78,9 +98,26 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 )
               else
                 const SizedBox(width: 48),
-              Text('Bước ${state.currentPage + 1}/5', style: const TextStyle(color: VitaTrackTheme.mauChuPhu, fontWeight: FontWeight.bold)),
+              Text('Bước ${state.currentPage + 1}/6', style: const TextStyle(color: VitaTrackTheme.mauChuPhu, fontWeight: FontWeight.bold)),
               TextButton(
-                onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const BottomNav())),
+                onPressed: () async {
+                  final user = ref.read(nguoiDungHienTaiProvider);
+                  if (user != null) {
+                    final userProfileService = ref.read(userProfileServiceProvider);
+                    await userProfileService.saveOnboardingData(user.uid, {
+                      'mucTieu': 'Giữ dáng',
+                      'gioiTinh': 'Nam',
+                      'chieuCao': 170.0,
+                      'canNang': 65.0,
+                      'tuoi': 25,
+                      'cuongDo': 'Vừa phải',
+                    });
+                    ref.invalidate(onboardingStatusProvider(user.uid));
+                  }
+                  if (context.mounted) {
+                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const BottomNav()));
+                  }
+                },
                 child: const Text('Bỏ qua', style: TextStyle(color: VitaTrackTheme.mauChuPhu)),
               ),
             ],
@@ -137,14 +174,23 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Widget _stepNhapThongSo(OnboardingState state, OnboardingNotifier notifier) {
     return _buildStepLayout(
       title: 'Chỉ số cơ thể',
-      desc: 'Hãy kéo thanh trượt để chọn chỉ số chính xác nhất.',
+      desc: 'Hãy nhập chiều cao và cân nặng để chúng tôi tính toán chính xác.',
       content: Column(
         children: [
-          _buildSliderInput('Chiều cao', state.height, 100, 220, 'cm', (val) => notifier.setHeight(val)),
+          _buildNumberInput('Chiều cao', _heightController, 'cm'),
           const SizedBox(height: 32),
-          _buildSliderInput('Cân nặng', state.weight, 30, 150, 'kg', (val) => notifier.setWeight(val)),
+          _buildNumberInput('Cân nặng', _weightController, 'kg'),
         ],
       ),
+    );
+  }
+
+  // BƯỚC 3.5: NHẬP TUỔI
+  Widget _stepNhapTuoi(OnboardingState state, OnboardingNotifier notifier) {
+    return _buildStepLayout(
+      title: 'Độ tuổi của bạn?',
+      desc: 'Yếu tố quan trọng để tính toán BMR chính xác.',
+      content: _buildNumberInput('Tuổi', _ageController, 'tuổi'),
     );
   }
 
@@ -230,10 +276,63 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ),
           onPressed: () async {
             HapticFeedback.mediumImpact();
-            if (state.currentPage < 4) {
+
+            // Thực hiện validate mạnh trước khi qua trang tiếp theo
+            if (state.currentPage == 2) {
+              final hText = _heightController.text.trim();
+              final wText = _weightController.text.trim();
+              
+              if (hText.isEmpty || wText.isEmpty) {
+                _showError('Vui lòng không để trống chiều cao và cân nặng');
+                return;
+              }
+              final h = double.tryParse(hText);
+              final w = double.tryParse(wText);
+              
+              if (h == null || w == null) {
+                _showError('Vui lòng nhập giá trị số hợp lệ');
+                return;
+              }
+              if (h < 0 || w < 0) {
+                _showError('Giá trị không được là số âm');
+                return;
+              }
+              if (h < 100 || h > 250) {
+                _showError('Chiều cao phải từ 100 cm đến 250 cm');
+                return;
+              }
+              if (w < 20 || w > 300) {
+                _showError('Cân nặng phải từ 20 kg đến 300 kg');
+                return;
+              }
+              notifier.setHeight(h);
+              notifier.setWeight(w);
+            } else if (state.currentPage == 3) {
+              final aText = _ageController.text.trim();
+              if (aText.isEmpty) {
+                _showError('Vui lòng không để trống tuổi');
+                return;
+              }
+              final a = int.tryParse(aText);
+              if (a == null) {
+                _showError('Vui lòng nhập tuổi là một số hợp lệ');
+                return;
+              }
+              if (a < 0) {
+                _showError('Tuổi không được là số âm');
+                return;
+              }
+              if (a < 13 || a > 100) {
+                _showError('Tuổi phải từ 13 đến 100');
+                return;
+              }
+              notifier.setAge(a);
+            }
+
+            if (state.currentPage < 5) {
               _pageController.nextPage(duration: const Duration(milliseconds: 500), curve: Curves.easeOutCubic);
               
-              if (state.currentPage == 3) {
+              if (state.currentPage == 4) {
                 await notifier.calculateAndShowResult();
               }
             } else {
@@ -245,14 +344,22 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   'gioiTinh': state.gender,
                   'chieuCao': state.height,
                   'canNang': state.weight,
+                  'tuoi': state.age,
                   'cuongDo': state.intensity,
+                  'caloriesGoal': state.caloriesGoal,
+                  'proteinGoal': state.proteinGoal,
+                  'carbsGoal': state.carbsGoal,
+                  'fatGoal': state.fatGoal,
                 });
                 ref.invalidate(onboardingStatusProvider(user.uid));
+                if (context.mounted) {
+                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const BottomNav()));
+                }
               }
             }
           },
           child: Text(
-            state.currentPage == 4 ? 'Bắt đầu hành trình' : 'Tiếp theo',
+            state.currentPage == 5 ? 'Bắt đầu hành trình' : 'Tiếp theo',
             style: const TextStyle(color: VitaTrackTheme.mauNen, fontWeight: FontWeight.bold, fontSize: 16),
           ),
         ),
@@ -326,25 +433,27 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  Widget _buildSliderInput(String label, double value, double min, double max, String unit, Function(double) onChanged) {
+  Widget _buildNumberInput(String label, TextEditingController controller, String unit) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label, style: const TextStyle(color: VitaTrackTheme.mauChu, fontSize: 16)),
-            RichText(text: TextSpan(children: [
-              TextSpan(text: '${value.toInt()}', style: const TextStyle(color: VitaTrackTheme.mauChinh, fontSize: 24, fontWeight: FontWeight.bold)),
-              TextSpan(text: ' $unit', style: const TextStyle(color: VitaTrackTheme.mauChuPhu, fontSize: 14)),
-            ])),
-          ],
-        ),
-        Slider(
-          value: value, min: min, max: max,
-          activeColor: VitaTrackTheme.mauChinh,
-          inactiveColor: VitaTrackTheme.mauCardNhat,
-          onChanged: onChanged,
+        Text(label, style: const TextStyle(color: VitaTrackTheme.mauChu, fontSize: 16)),
+        const SizedBox(height: 12),
+        TextField(
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          style: const TextStyle(color: VitaTrackTheme.mauChinh, fontSize: 24, fontWeight: FontWeight.bold),
+          decoration: InputDecoration(
+            suffixText: unit,
+            suffixStyle: const TextStyle(color: VitaTrackTheme.mauChuPhu, fontSize: 16),
+            filled: true,
+            fillColor: VitaTrackTheme.mauCard,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          ),
         ),
       ],
     );

@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 
-class WorkoutAiService {
+class WorkoutAiDataSource {
   static const String _baseUrl = 'https://api.groq.com/openai/v1';
   static const String _model = 'llama-3.3-70b-versatile';
 
   final String _apiKey;
   final Dio _dio;
 
-  WorkoutAiService({
+  WorkoutAiDataSource({
     required String apiKey,
     Dio? dio,
   })  : _apiKey = apiKey,
@@ -78,7 +78,6 @@ Trả về ĐÚNG định dạng JSON sau, không thêm bất kỳ văn bản gi
       final jsonStr = _extractJson(text);
       final map = jsonDecode(jsonStr) as Map<String, dynamic>;
 
-      // Kiểm tra AI xác nhận input có phải bài tập không
       if (map['type'] == 'invalid') {
         throw Exception('Yêu cầu không hợp lệ. Vui lòng nhập tên bài tập thể dục (ví dụ: hít đất, chạy bộ, squat...)');
       }
@@ -86,10 +85,10 @@ Trả về ĐÚNG định dạng JSON sau, không thêm bất kỳ văn bản gi
       return map;
     } on DioException catch (e) {
       final msg = e.response?.data?['error']?['message'] ?? e.message ?? 'Lỗi kết nối';
-      print('Lỗi WorkoutAiService (Groq): $msg');
+      print('Lỗi WorkoutAiDataSource (Groq): $msg');
       throw Exception('Không thể tạo giáo án: $msg');
     } catch (e) {
-      print('Lỗi WorkoutAiService.parseWorkoutPlan: $e');
+      print('Lỗi WorkoutAiDataSource.parseWorkoutPlan: $e');
       throw Exception('Không thể tạo giáo án: $e');
     }
   }

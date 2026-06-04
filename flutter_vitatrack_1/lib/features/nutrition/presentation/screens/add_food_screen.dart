@@ -426,6 +426,9 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
   void _showManualEntryDialog() {
     final nameController = TextEditingController();
     final calController = TextEditingController();
+    final proteinController = TextEditingController();
+    final carbsController = TextEditingController();
+    final fatController = TextEditingController();
     
     showModalBottomSheet<void>(
       context: context,
@@ -436,6 +439,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
         child: StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
             bool isEstimating = false;
+            bool estimatedByAi = false;
 
             return Container(
               margin: const EdgeInsets.all(16),
@@ -444,92 +448,159 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
                 color: VitaTrackTheme.mauCard,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Nhập thức ăn tự do', style: TextStyle(color: VitaTrackTheme.mauChu, fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: nameController,
-                    style: const TextStyle(color: VitaTrackTheme.mauChu),
-                    decoration: InputDecoration(
-                      labelText: 'Tên món ăn (Ví dụ: Cơm canh thập cẩm)',
-                      labelStyle: const TextStyle(color: VitaTrackTheme.mauChuPhu),
-                      filled: true,
-                      fillColor: VitaTrackTheme.mauNen,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                      suffixIcon: isEstimating
-                          ? const Padding(padding: EdgeInsets.all(12), child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
-                          : IconButton(
-                              icon: const Icon(Icons.auto_awesome, color: VitaTrackTheme.mauChinh),
-                              tooltip: 'AI Ước tính Calo',
-                              onPressed: () async {
-                                final query = nameController.text.trim();
-                                if (query.isEmpty) return;
-                                
-                                setModalState(() => isEstimating = true);
-                                try {
-                                  final groqKey = dotenv.env['GROQ_API_KEY'] ?? '';
-                                  final dataSource = ref.read(foodApiDataSourceProvider);
-                                  final results = await dataSource.estimateByAI(query, groqKey);
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Nhập thức ăn tự do', style: TextStyle(color: VitaTrackTheme.mauChu, fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: nameController,
+                      style: const TextStyle(color: VitaTrackTheme.mauChu),
+                      decoration: InputDecoration(
+                        labelText: 'Tên món ăn (Ví dụ: Cơm canh thập cẩm)',
+                        labelStyle: const TextStyle(color: VitaTrackTheme.mauChuPhu),
+                        filled: true,
+                        fillColor: VitaTrackTheme.mauNen,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                        suffixIcon: isEstimating
+                            ? const Padding(padding: EdgeInsets.all(12), child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+                            : IconButton(
+                                icon: const Icon(Icons.auto_awesome, color: VitaTrackTheme.mauChinh),
+                                tooltip: 'AI Ước tính Dinh dưỡng',
+                                onPressed: () async {
+                                  final query = nameController.text.trim();
+                                  if (query.isEmpty) return;
                                   
-                                  if (results.isNotEmpty) {
-                                    calController.text = results.first.calo.toString();
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('AI không thể ước tính món này')));
+                                  setModalState(() {
+                                    isEstimating = true;
+                                    estimatedByAi = false;
+                                  });
+                                  try {
+                                    final groqKey = dotenv.env['GROQ_API_KEY'] ?? '';
+                                    final dataSource = ref.read(foodApiDataSourceProvider);
+                                    final results = await dataSource.estimateByAI(query, groqKey);
+                                    
+                                    if (results.isNotEmpty) {
+                                      final food = results.first;
+                                      calController.text = food.calo.toString();
+                                      proteinController.text = food.protein.toStringAsFixed(1);
+                                      carbsController.text = food.carbs.toStringAsFixed(1);
+                                      fatController.text = food.fat.toStringAsFixed(1);
+                                      estimatedByAi = true;
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('AI không thể ước tính món này')));
+                                    }
+                                  } catch (e) {
+                                    final errorMsg = e.toString().replaceAll('Exception: ', '');
+                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMsg)));
+                                  } finally {
+                                    if (mounted) setModalState(() => isEstimating = false);
                                   }
-                                } catch (e) {
-                                  final errorMsg = e.toString().replaceAll('Exception: ', '');
-                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMsg)));
-                                } finally {
-                                  if (mounted) setModalState(() => isEstimating = false);
-                                }
-                              },
-                            ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: calController,
-                    keyboardType: TextInputType.number,
-                    style: const TextStyle(color: VitaTrackTheme.mauChu),
-                    decoration: InputDecoration(
-                      labelText: 'Lượng Calo (kcal)',
-                      labelStyle: const TextStyle(color: VitaTrackTheme.mauChuPhu),
-                      filled: true,
-                      fillColor: VitaTrackTheme.mauNen,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: VitaTrackTheme.mauThanhCong,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                },
+                              ),
                       ),
-                      onPressed: () {
-                        final name = nameController.text.trim();
-                        final calo = int.tryParse(calController.text.trim()) ?? 0;
-                        if (name.isEmpty || calo <= 0) return;
-                        
-                        ref.read(nutritionProvider.notifier).themMonAn(
-                          calo, 0, 0, 0,
-                          tenMonAn: name,
-                        );
-                        Navigator.pop(ctx); // Đóng bottom sheet
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã thêm món ăn!'), behavior: SnackBarBehavior.floating));
-                          Navigator.pop(context); // Quay về màn hình dinh dưỡng chính
-                        }
-                      },
-                      child: const Text('Lưu món ăn', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
                     ),
-                  ),
-                ],
+                    if (estimatedByAi) ...[
+                      const SizedBox(height: 8),
+                      const Text('✨ Ước tính bởi AI', style: TextStyle(color: VitaTrackTheme.mauChinh, fontSize: 12, fontWeight: FontWeight.bold)),
+                    ],
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: calController,
+                      keyboardType: TextInputType.number,
+                      style: const TextStyle(color: VitaTrackTheme.mauChu),
+                      decoration: InputDecoration(
+                        labelText: 'Lượng Calo (kcal)',
+                        labelStyle: const TextStyle(color: VitaTrackTheme.mauChuPhu),
+                        filled: true,
+                        fillColor: VitaTrackTheme.mauNen,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: proteinController,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            style: const TextStyle(color: VitaTrackTheme.mauChu),
+                            decoration: InputDecoration(
+                              labelText: 'Protein (g)',
+                              labelStyle: const TextStyle(color: VitaTrackTheme.mauChuPhu, fontSize: 12),
+                              filled: true,
+                              fillColor: VitaTrackTheme.mauNen,
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: carbsController,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            style: const TextStyle(color: VitaTrackTheme.mauChu),
+                            decoration: InputDecoration(
+                              labelText: 'Carbs (g)',
+                              labelStyle: const TextStyle(color: VitaTrackTheme.mauChuPhu, fontSize: 12),
+                              filled: true,
+                              fillColor: VitaTrackTheme.mauNen,
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: fatController,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            style: const TextStyle(color: VitaTrackTheme.mauChu),
+                            decoration: InputDecoration(
+                              labelText: 'Fat (g)',
+                              labelStyle: const TextStyle(color: VitaTrackTheme.mauChuPhu, fontSize: 12),
+                              filled: true,
+                              fillColor: VitaTrackTheme.mauNen,
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: VitaTrackTheme.mauThanhCong,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: () {
+                          final name = nameController.text.trim();
+                          final calo = int.tryParse(calController.text.trim()) ?? 0;
+                          final protein = double.tryParse(proteinController.text.trim()) ?? 0.0;
+                          final carbs = double.tryParse(carbsController.text.trim()) ?? 0.0;
+                          final fat = double.tryParse(fatController.text.trim()) ?? 0.0;
+                          
+                          if (name.isEmpty || calo <= 0) return;
+                          
+                          ref.read(nutritionProvider.notifier).themMonAn(
+                            calo, protein, carbs, fat,
+                            tenMonAn: name,
+                          );
+                          Navigator.pop(ctx); // Đóng bottom sheet
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã thêm món ăn!'), behavior: SnackBarBehavior.floating));
+                            Navigator.pop(context); // Quay về màn hình dinh dưỡng chính
+                          }
+                        },
+                        child: const Text('Lưu món ăn', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -673,9 +744,10 @@ class _AiCameraSheetState extends ConsumerState<_AiCameraSheet> {
                   borderRadius: BorderRadius.circular(12))),
           onPressed: () {
             HapticFeedback.mediumImpact();
+            final safeName = ten.trim().isEmpty ? 'Món ăn (AI)' : ten;
             ref.read(nutritionProvider.notifier).themMonAn(
               calo, protein, carbs, fat,
-              tenMonAn: ten,
+              tenMonAn: safeName,
             );
             Navigator.pop(context);
           },

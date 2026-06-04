@@ -11,6 +11,7 @@ class ProfileEntity {
   final String? gioiTinh;
   final String? mucTieu;
   final String? cuongDo;
+  final int? caloriesGoal;
   final bool? onboardingDone;
 
   const ProfileEntity({
@@ -23,6 +24,7 @@ class ProfileEntity {
     this.gioiTinh,
     this.mucTieu,
     this.cuongDo,
+    this.caloriesGoal,
     this.onboardingDone,
   });
 
@@ -36,6 +38,7 @@ class ProfileEntity {
     String? gioiTinh,
     String? mucTieu,
     String? cuongDo,
+    int? caloriesGoal,
     bool? onboardingDone,
   }) {
     return ProfileEntity(
@@ -48,6 +51,7 @@ class ProfileEntity {
       gioiTinh: gioiTinh ?? this.gioiTinh,
       mucTieu: mucTieu ?? this.mucTieu,
       cuongDo: cuongDo ?? this.cuongDo,
+      caloriesGoal: caloriesGoal ?? this.caloriesGoal,
       onboardingDone: onboardingDone ?? this.onboardingDone,
     );
   }
@@ -63,6 +67,7 @@ class ProfileEntity {
       gioiTinh: map['gioiTinh'],
       mucTieu: map['mucTieu'],
       cuongDo: map['cuongDo'],
+      caloriesGoal: map['caloriesGoal']?.toInt(),
       onboardingDone: map['onboardingDone'],
     );
   }
@@ -76,6 +81,7 @@ class ProfileEntity {
       'gioiTinh': gioiTinh,
       'mucTieu': mucTieu,
       'cuongDo': cuongDo,
+      'caloriesGoal': caloriesGoal,
       'onboardingDone': onboardingDone,
     };
   }

@@ -26,6 +26,15 @@ class HomeScreen extends ConsumerWidget {
     final sleepM = ((sleepHours - sleepH) * 60).round();
     final sleepText = '${sleepH}h ${sleepM}m';
 
+    final calorieProgress = nutrition.caloMucTieu > 0 
+        ? (nutrition.caloDaNap / nutrition.caloMucTieu).clamp(0.0, 1.0) 
+        : 0.0;
+    final waterProgress = nutrition.soLyNuoc > 0 
+        ? (nutrition.soLyNuoc / 8.0).clamp(0.0, 1.0) 
+        : 0.0;
+    final overallProgress = (calorieProgress + stepProgress + waterProgress) / 3;
+    final overallPercent = (overallProgress * 100).round();
+
     return Scaffold(
       backgroundColor: VitaTrackTheme.mauNen,
       body: SafeArea(
@@ -107,9 +116,9 @@ class HomeScreen extends ConsumerWidget {
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                const Text(
-                                  '75%',
-                                  style: TextStyle(
+                                Text(
+                                  '$overallPercent%',
+                                  style: const TextStyle(
                                     color: VitaTrackTheme.mauChu,
                                     fontSize: 32,
                                     fontWeight: FontWeight.bold,
@@ -119,8 +128,8 @@ class HomeScreen extends ConsumerWidget {
                                 Padding(
                                   padding: const EdgeInsets.only(bottom: 6),
                                   child: Text(
-                                    '+12%',
-                                    style: TextStyle(
+                                    overallPercent >= 100 ? '🎯 Hoàn thành!' : '$overallPercent% mục tiêu',
+                                    style: const TextStyle(
                                       color: VitaTrackTheme.mauThanhCong,
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
@@ -136,7 +145,7 @@ class HomeScreen extends ConsumerWidget {
                           width: 80,
                           height: 80,
                           child: TweenAnimationBuilder<double>(
-                            tween: Tween<double>(begin: 0.0, end: 0.75),
+                            tween: Tween<double>(begin: 0.0, end: overallProgress),
                             duration: const Duration(milliseconds: 1500),
                             curve: Curves.easeOutCubic,
                             builder: (context, value, child) {
@@ -226,16 +235,6 @@ class HomeScreen extends ConsumerWidget {
                           'Xu hướng tuần này',
                           style: TextStyle(color: VitaTrackTheme.mauChu, fontSize: 16, fontWeight: FontWeight.bold),
                         ),
-                        Row(
-                          children: [
-                            const Icon(Icons.trending_up, color: VitaTrackTheme.mauThanhCong, size: 16),
-                            const SizedBox(width: 4),
-                            const Text(
-                              '+15%',
-                              style: TextStyle(color: VitaTrackTheme.mauThanhCong, fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        )
                       ],
                     ),
                     const SizedBox(height: 40), 

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_vitatrack_1/core/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_vitatrack_1/features/profile/presentation/providers/profile_provider.dart';
-
+import 'package:flutter_vitatrack_1/features/health/presentation/providers/health_provider.dart';
+import 'package:flutter_vitatrack_1/features/auth/presentation/providers/auth_provider.dart';
 // Provider lưu trạng thái ngôn ngữ và thông báo tạm thời trong session
 final _ngonNguProvider = StateProvider<String>((ref) => 'vi');
 final _thongBaoProvider = StateProvider<bool>((ref) => true);
@@ -28,6 +29,25 @@ class _SettingsTabState extends ConsumerState<SettingsTab> {
           child: Column(
             children: [
               _taoMucCaiDat(Icons.track_changes, VitaTrackTheme.mauChinh, 'Mục tiêu cá nhân', _hienThiMucTieuCaNhan),
+              _taoDuongKe(),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: VitaTrackTheme.mauPhu.withValues(alpha: 0.1), shape: BoxShape.circle),
+                  child: const Icon(Icons.bedtime_outlined, color: VitaTrackTheme.mauPhu, size: 20),
+                ),
+                title: const Text('Giấc ngủ hôm qua', style: TextStyle(color: VitaTrackTheme.mauChu, fontSize: 15)),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('${ref.watch(healthProvider).sleepHours} giờ',
+                        style: const TextStyle(color: VitaTrackTheme.mauChuPhu, fontSize: 13)),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.chevron_right, color: VitaTrackTheme.mauChuPhu, size: 20),
+                  ],
+                ),
+                onTap: _hienThiNhapGiacNgu,
+              ),
               _taoDuongKe(),
               // Thông báo với toggle switch
               ListTile(
@@ -94,6 +114,19 @@ class _SettingsTabState extends ConsumerState<SettingsTab> {
             ),
           ),
         ),
+        const SizedBox(height: 32),
+        
+        // NÚT XÓA TÀI KHOẢN
+        ListTile(
+          leading: const Icon(Icons.delete_forever, color: VitaTrackTheme.mauNguyHiem),
+          title: const Text('Xóa tài khoản', 
+                       style: TextStyle(color: VitaTrackTheme.mauNguyHiem, 
+                                        fontWeight: FontWeight.bold)),
+          subtitle: const Text('Xóa vĩnh viễn tài khoản và toàn bộ dữ liệu',
+                         style: TextStyle(color: VitaTrackTheme.mauChuPhu, fontSize: 12)),
+          onTap: () => _showDeleteConfirmDialog(context, ref),
+        ),
+        const SizedBox(height: 24),
       ],
     );
   }
@@ -108,6 +141,70 @@ class _SettingsTabState extends ConsumerState<SettingsTab> {
       title: Text(title, style: const TextStyle(color: VitaTrackTheme.mauChu, fontSize: 15)),
       trailing: const Icon(Icons.chevron_right, color: VitaTrackTheme.mauChuPhu, size: 20),
       onTap: onTap,
+    );
+  }
+
+  // ─── Giấc ngủ hôm qua ─────────────────────────────────────
+
+  void _hienThiNhapGiacNgu() {
+    final currentSleep = ref.read(healthProvider).sleepHours;
+    double sleepInput = currentSleep;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) {
+        return StatefulBuilder(builder: (ctx, setSheetState) {
+          return Container(
+            padding: const EdgeInsets.all(24),
+            decoration: const BoxDecoration(
+              color: VitaTrackTheme.mauCard,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: VitaTrackTheme.mauCardNhat, borderRadius: BorderRadius.circular(2)))),
+                const SizedBox(height: 20),
+                const Text('Giấc ngủ hôm qua', style: TextStyle(color: VitaTrackTheme.mauChu, fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 24),
+                Text('${sleepInput.toStringAsFixed(1)} giờ', style: const TextStyle(color: VitaTrackTheme.mauChinh, fontSize: 32, fontWeight: FontWeight.bold)),
+                Slider(
+                  value: sleepInput,
+                  min: 0,
+                  max: 12,
+                  divisions: 24, // step 0.5
+                  activeColor: VitaTrackTheme.mauChinh,
+                  inactiveColor: VitaTrackTheme.mauCardNhat,
+                  onChanged: (val) {
+                    setSheetState(() => sleepInput = val);
+                  },
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: VitaTrackTheme.mauChinh,
+                      foregroundColor: VitaTrackTheme.mauNen,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () async {
+                      Navigator.pop(sheetCtx);
+                      await ref.read(healthProvider.notifier).updateSleepHours(sleepInput);
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã cập nhật giấc ngủ!'), backgroundColor: VitaTrackTheme.mauThanhCong, behavior: SnackBarBehavior.floating));
+                    },
+                    child: const Text('Lưu thay đổi', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          );
+        });
+      },
     );
   }
 
@@ -392,5 +489,48 @@ class _SettingsTabState extends ConsumerState<SettingsTab> {
 
   Widget _taoDuongKe() {
     return const Divider(color: VitaTrackTheme.mauCardNhat, height: 1, indent: 60, endIndent: 16);
+  }
+
+  void _showDeleteConfirmDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: VitaTrackTheme.mauCard,
+        title: const Text('Xóa tài khoản?', 
+                     style: TextStyle(color: VitaTrackTheme.mauNguyHiem,
+                                      fontWeight: FontWeight.bold)),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Hành động này KHÔNG THỂ hoàn tác.\n\n'
+              'Toàn bộ dữ liệu dinh dưỡng, lịch sử tập luyện '
+              'và thông tin cá nhân sẽ bị xóa vĩnh viễn.',
+              style: TextStyle(color: VitaTrackTheme.mauChuPhu),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Hủy', style: TextStyle(color: VitaTrackTheme.mauChuPhu)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: VitaTrackTheme.mauNguyHiem,
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final user = ref.read(nguoiDungHienTaiProvider);
+              if (user == null) return;
+              await ref.read(authProvider.notifier).deleteAccount(user.uid);
+            },
+            child: const Text('Xóa vĩnh viễn', 
+                         style: TextStyle(color: Colors.white, 
+                                          fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -95,6 +95,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = const AuthState();
   }
 
+  Future<void> deleteAccount(String uid) async {
+    state = state.copyWith(dangTai: true, xoaLoi: true);
+    try {
+      await _authService.deleteAccount(uid);
+      state = const AuthState(); // clear state — Firebase stream will handle redirect
+    } catch (e) {
+      state = state.copyWith(
+        dangTai: false,
+        loi: e.toString().replaceAll('Exception: ', ''),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _sub?.cancel();

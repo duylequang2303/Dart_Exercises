@@ -2,16 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_vitatrack_1/core/theme.dart';
 import 'package:flutter_vitatrack_1/features/AI_Coach/presentation/providers/ai_coach_dependencies_provider.dart';
-import 'package:flutter_vitatrack_1/features/auth/presentation/providers/auth_provider.dart';
-import 'package:flutter_vitatrack_1/features/workout/presentation/screens/live_workout_screen.dart';
-import 'package:flutter_vitatrack_1/features/workout/domain/entities/exercise_entity.dart';
-import 'package:flutter_vitatrack_1/features/nutrition/presentation/providers/nutrition_provider.dart';
+
 import 'package:flutter_vitatrack_1/features/home/presentation/widgets/workout_plan_bottom_sheet.dart';
 import 'package:flutter_vitatrack_1/features/home/presentation/widgets/meal_plan_bottom_sheet.dart';
+import 'package:flutter_vitatrack_1/features/AI_Coach/presentation/providers/analysis_plan_provider.dart';
 
 
 class AiAssistantWidget extends ConsumerStatefulWidget {
-  const AiAssistantWidget({Key? key}) : super(key: key);
+  const AiAssistantWidget({super.key});
 
   @override
   ConsumerState<AiAssistantWidget> createState() => _AiAssistantWidgetState();
@@ -22,9 +20,10 @@ class _AiAssistantWidgetState extends ConsumerState<AiAssistantWidget> {
   String _loadingMessage = '';
 
   Future<void> _handleGenerateWorkout() async {
+    final contextData = ref.read(userHealthContextProvider);
     setState(() {
       _isLoading = true;
-      _loadingMessage = 'Đang nhào nặn giáo án tập...';
+      _loadingMessage = 'AI đang lên giáo án phù hợp với mục tiêu ${contextData.mucTieu ?? "của bạn"}...';
     });
 
     try {
@@ -62,24 +61,25 @@ class _AiAssistantWidgetState extends ConsumerState<AiAssistantWidget> {
   }
 
   Future<void> _handleGenerateMealPlan() async {
-    final authState = ref.read(authProvider);
-    final targetCalo = authState.nguoiDung?.caloMucTieu ?? 2000;
+    final contextData = ref.read(userHealthContextProvider);
+    final remainingCal = contextData.dailyCaloriesGoal - contextData.caloriesBurned;
+    final targetCal = remainingCal.clamp(300, contextData.dailyCaloriesGoal);
 
     setState(() {
       _isLoading = true;
-      _loadingMessage = 'AI đang lên thực đơn $targetCalo kcal...';
+      _loadingMessage = 'Còn $remainingCal kcal hôm nay, AI đang lên thực đơn...';
     });
 
     try {
       final apiKey = kGroqApiKey;
       final planner = ref.read(aiPlannerDataSourceProvider);
-      final meals = await planner.generateMealPlan(apiKey, targetCalo);
+      final meals = await planner.generateMealPlan(apiKey, targetCal.toInt());
 
       if (!mounted) return;
       setState(() => _isLoading = false);
 
       if (meals != null && meals.isNotEmpty) {
-        _showMealPlanBottomSheet(meals, targetCalo);
+        _showMealPlanBottomSheet(meals, targetCal.toInt());
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('AI không thể lên thực đơn lúc này.'))

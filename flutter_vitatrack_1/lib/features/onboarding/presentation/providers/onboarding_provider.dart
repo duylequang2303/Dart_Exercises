@@ -7,6 +7,7 @@ class OnboardingState {
   final String gender;
   final double height;
   final double weight;
+  final int age;
   final String intensity;
 
   // Kết quả tính toán thực từ công thức
@@ -22,6 +23,7 @@ class OnboardingState {
     this.gender = 'Nam',
     this.height = 170,
     this.weight = 65,
+    this.age = 25,
     this.intensity = 'Vừa phải',
     this.caloriesGoal = 0,
     this.proteinGoal = 0,
@@ -36,6 +38,7 @@ class OnboardingState {
     String? gender,
     double? height,
     double? weight,
+    int? age,
     String? intensity,
     int? caloriesGoal,
     int? proteinGoal,
@@ -49,6 +52,7 @@ class OnboardingState {
       gender: gender ?? this.gender,
       height: height ?? this.height,
       weight: weight ?? this.weight,
+      age: age ?? this.age,
       intensity: intensity ?? this.intensity,
       caloriesGoal: caloriesGoal ?? this.caloriesGoal,
       proteinGoal: proteinGoal ?? this.proteinGoal,
@@ -66,6 +70,7 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
   void setGender(String gender) => state = state.copyWith(gender: gender);
   void setHeight(double height) => state = state.copyWith(height: height);
   void setWeight(double weight) => state = state.copyWith(weight: weight);
+  void setAge(int age) => state = state.copyWith(age: age);
   void setIntensity(String intensity) => state = state.copyWith(intensity: intensity);
 
   /// Tính toán thực dựa trên Mifflin-St Jeor + macro split
@@ -77,7 +82,7 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
 
     final h = state.height;
     final w = state.weight;
-    const age = 25; // mặc định nếu chưa có tuổi
+    final age = state.age;
     final bool isNam = state.gender == 'Nam';
 
     // BMR - Mifflin-St Jeor

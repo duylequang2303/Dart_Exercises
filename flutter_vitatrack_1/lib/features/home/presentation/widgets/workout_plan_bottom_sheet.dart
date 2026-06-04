@@ -11,9 +11,9 @@ class WorkoutPlanBottomSheetContent extends ConsumerStatefulWidget {
   final Map<String, dynamic> initialResult;
 
   const WorkoutPlanBottomSheetContent({
-    Key? key,
+    super.key,
     required this.initialResult,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<WorkoutPlanBottomSheetContent> createState() => _WorkoutPlanBottomSheetContentState();

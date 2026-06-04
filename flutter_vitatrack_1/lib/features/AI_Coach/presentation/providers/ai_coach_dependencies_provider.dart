@@ -1,7 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:dio/dio.dart';
+
+import 'package:flutter_vitatrack_1/core/providers/dio_provider.dart';
 
 import '../../data/datasources/groq_api_datasource.dart';
 import '../../data/datasources/ai_planner_datasource.dart';
@@ -32,9 +33,7 @@ final sharedPreferencesProvider = FutureProvider<SharedPreferences>((ref) async 
   return SharedPreferences.getInstance();
 });
 
-final dioProvider = Provider<Dio>((ref) {
-  return Dio();
-});
+
 
 // ─── DataSources ──────────────────────────────────────────────
 

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_vitatrack_1/core/services/firestore_service.dart';
 import 'package:flutter_vitatrack_1/features/profile/domain/entities/profile_entity.dart';
 
@@ -15,6 +16,12 @@ class ProfileDataSource {
 
   Future<void> updateProfile(String uid, Map<String, dynamic> data) async {
     await _firestoreService.updateDocument('users/$uid/profile', 'info', data);
+  }
+
+  Future<void> changePassword(String newPassword) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw Exception('Người dùng chưa đăng nhập');
+    await user.updatePassword(newPassword);
   }
 }
 

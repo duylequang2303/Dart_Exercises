@@ -4,7 +4,6 @@ class UserHealthContext {
   final int activeCaloriesBurned;
   final int waterIntakeMl;
   final double sleepHours;
-  final int heartRateBpm;
   final int dailyStepsGoal;
   final int dailyCaloriesGoal;
   final int dailyWaterGoalMl;
@@ -32,7 +31,6 @@ class UserHealthContext {
     this.activeCaloriesBurned = 0,
     required this.waterIntakeMl,
     required this.sleepHours,
-    required this.heartRateBpm,
     required this.dailyStepsGoal,
     required this.dailyCaloriesGoal,
     required this.dailyWaterGoalMl,
@@ -92,7 +90,6 @@ Dữ liệu sức khỏe hôm nay:
 - Protein: ${proteinGram.toStringAsFixed(0)}g | Carbs: ${carbsGram.toStringAsFixed(0)}g | Chất béo: ${fatGram.toStringAsFixed(0)}g
 - Nước uống: ${waterIntakeMl}ml/${dailyWaterGoalMl}ml
 - Giấc ngủ: $sleepHours giờ
-- Nhịp tim trung bình: $heartRateBpm BPM
 
 Chi tiết hoạt động hôm nay:
 - Các món đã ăn: ${mealNames.isEmpty ? 'Chưa ăn gì' : mealNames.join(', ')}

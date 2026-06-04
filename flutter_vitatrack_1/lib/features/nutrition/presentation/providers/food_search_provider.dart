@@ -2,11 +2,10 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_vitatrack_1/core/providers/dio_provider.dart';
 import '../../domain/entities/food_entity.dart';
 import '../../data/datasources/food_api_datasource.dart';
 
-// Khởi tạo Dio provider
-final dioProvider = Provider<Dio>((ref) => Dio());
 
 // Khởi tạo Datasource provider
 final foodApiDataSourceProvider = Provider<FoodApiDataSource>((ref) {

@@ -14,6 +14,7 @@ class StopWorkout {
     required int iconCodePoint,
     required String type,
     required List<ExerciseEntity> exercises,
+    String? userId,
   }) async {
     await repository.stopWorkout(
       elapsed,
@@ -23,6 +24,7 @@ class StopWorkout {
       iconCodePoint: iconCodePoint,
       type: type,
       exercises: exercises,
+      userId: userId,
     );
   }
 }

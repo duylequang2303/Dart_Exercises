@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,21 +28,6 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen> with Tick
   bool _ended = false;
   late AnimationController _holdController;
 
-  // Trạng thái cho giáo án tập luyện có cấu trúc (Guided sets/reps)
-  int _currentExerciseIndex = 0;
-  int _currentSetIndex = 1;
-  bool _isResting = false;
-  int _restTimeRemaining = 45;
-  Timer? _restTimer;
-
-  // Đếm ngược giữ thế (Cho bài tập như Plank)
-  int _holdTimeRemaining = 0;
-  Timer? _holdTimer;
-  bool _isHoldActive = false;
-
-  // Lượng calo giả lập tích lũy cho Gym
-  double _accumulatedCalories = 0.0;
-
   @override
   void initState() {
     super.initState();
@@ -55,121 +39,23 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen> with Tick
       }
     });
 
-    ref.read(workoutElapsedProvider.notifier).reset();
-    ref.read(workoutElapsedProvider.notifier).startCountdown(3);
+    ref.read(workoutTimerNotifierProvider.notifier).reset();
+    ref.read(workoutTimerNotifierProvider.notifier).startCountdown(3);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(liveWorkoutProvider.notifier).init(widget.tenBaiTap);
     });
-
-    // Nếu bài tập đầu tiên là dạng giữ thế (plank), setup thời gian giữ
-    if (widget.exercises.isNotEmpty) {
-      _setupCurrentExercise();
-    }
-  }
-
-  void _setupCurrentExercise() {
-    final currentEx = widget.exercises[_currentExerciseIndex];
-    if (currentEx.duration.inSeconds > 0) {
-      _holdTimeRemaining = currentEx.duration.inSeconds;
-      _isHoldActive = false;
-    } else {
-      _holdTimeRemaining = 0;
-      _isHoldActive = false;
-    }
   }
 
   @override
   void dispose() {
     _holdController.dispose();
-    _restTimer?.cancel();
-    _holdTimer?.cancel();
     super.dispose();
-  }
-
-  void _startHoldTimer() {
-    _holdTimer?.cancel();
-    setState(() => _isHoldActive = true);
-    _holdTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) return;
-      if (_holdTimeRemaining > 0) {
-        setState(() {
-          _holdTimeRemaining--;
-          _accumulatedCalories += 0.15; // Plank đốt ~0.15 kcal/s
-        });
-      } else {
-        _holdTimer?.cancel();
-        setState(() => _isHoldActive = false);
-        HapticFeedback.vibrate();
-      }
-    });
-  }
-
-  void _pauseHoldTimer() {
-    _holdTimer?.cancel();
-    setState(() => _isHoldActive = false);
-  }
-
-  void _startRestTimer(int seconds) {
-    _restTimer?.cancel();
-    setState(() {
-      _isResting = true;
-      _restTimeRemaining = seconds;
-    });
-
-    _restTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) return;
-      if (_restTimeRemaining > 0) {
-        setState(() => _restTimeRemaining--);
-      } else {
-        _skipRest();
-      }
-    });
-  }
-
-  void _skipRest() {
-    _restTimer?.cancel();
-    HapticFeedback.mediumImpact();
-    setState(() {
-      _isResting = false;
-    });
-    _setupCurrentExercise();
-  }
-
-  void _nextSet() {
-    _holdTimer?.cancel();
-    final currentEx = widget.exercises[_currentExerciseIndex];
-    
-    // Đốt calo sau mỗi hiệp (Ví dụ 1 cái = 0.8 kcal, hoặc 1 hiệp giữ tĩnh = 15 kcal)
-    setState(() {
-      _accumulatedCalories += (currentEx.reps > 0) ? (currentEx.reps * 0.8) : 15.0;
-    });
-
-    if (_currentSetIndex < currentEx.sets) {
-      // Sang hiệp tiếp theo của bài hiện tại
-      setState(() => _currentSetIndex++);
-      _startRestTimer(currentEx.restSeconds);
-    } else {
-      // Hết bài hiện tại, sang bài tập tiếp theo
-      if (_currentExerciseIndex < widget.exercises.length - 1) {
-        setState(() {
-          _currentExerciseIndex++;
-          _currentSetIndex = 1;
-        });
-        _startRestTimer(currentEx.restSeconds);
-      } else {
-        // Hoàn thành toàn bộ bài tập
-        _endWorkout();
-      }
-    }
   }
 
   void _endWorkout() {
     if (_ended) return;
     _ended = true;
-
-    _holdTimer?.cancel();
-    _restTimer?.cancel();
 
     final liveState = ref.read(liveWorkoutProvider);
     final elapsed = ref.read(workoutElapsedProvider);
@@ -177,26 +63,6 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen> with Tick
     // Tính toán calo tổng hợp và thời gian dự kiến
     double finalCalories = liveState.calories;
     Duration finalDuration = elapsed;
-
-    if (widget.exercises.isNotEmpty) {
-      finalCalories = _accumulatedCalories;
-      
-      // Tính toán thời gian dự kiến (tránh việc bấm next quá nhanh dẫn đến lịch sử chỉ có vài giây)
-      int expectedSeconds = 0;
-      for (var ex in widget.exercises) {
-        if (ex.reps > 0) {
-          expectedSeconds += ex.sets * ex.reps * 4; // Trung bình 4s cho 1 cái (reps)
-        } else {
-          expectedSeconds += ex.sets * ex.duration.inSeconds; // Thời gian giữ thế
-        }
-        expectedSeconds += ex.sets * ex.restSeconds; // Thời gian nghỉ
-      }
-      
-      // Nếu người dùng bấm nhanh qua bài tập (chưa tới 1/3 thời gian), ta sẽ lấy thời gian chuẩn dự kiến
-      if (elapsed.inSeconds < expectedSeconds / 3) {
-        finalDuration = Duration(seconds: expectedSeconds);
-      }
-    }
 
     if (widget.exercises.isEmpty && elapsed.inSeconds < 5) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -209,7 +75,7 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen> with Tick
       return;
     }
 
-    ref.read(workoutElapsedProvider.notifier).stop(
+    ref.read(workoutTimerNotifierProvider.notifier).stop(
       name: widget.tenBaiTap,
       calories: finalCalories,
       steps: liveState.stepsDelta,
@@ -242,7 +108,7 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen> with Tick
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _dialogStat('${_format(elapsed)}', 'THỜI GIAN'),
+                _dialogStat(_format(elapsed), 'THỜI GIAN'),
                 _dialogStat('${finalCalories.toStringAsFixed(1)} kcal', 'CALORIES'),
               ],
             ),
@@ -290,17 +156,15 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen> with Tick
   Widget build(BuildContext context) {
     final elapsed = ref.watch(workoutElapsedProvider);
     final liveState = ref.watch(liveWorkoutProvider);
-    final countdownAsync = ref.watch(workoutCountdownProvider);
-    int? countdown = countdownAsync.when(data: (v) => v, loading: () => null, error: (_, _) => null);
+    final countdownDuration = ref.watch(workoutCountdownProvider);
+    int? countdown = countdownDuration?.inSeconds;
 
     return Scaffold(
       backgroundColor: VitaTrackTheme.mauNen,
       body: SafeArea(
         child: countdown != null 
             ? _buildCountdown(countdown) 
-            : (widget.exercises.isNotEmpty 
-                ? _buildGuidedWorkout(elapsed, liveState)
-                : _buildLive(elapsed, liveState)),
+            : _buildLive(elapsed, liveState),
       ),
     );
   }
@@ -329,327 +193,6 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen> with Tick
     );
   }
 
-  // Giao diện hướng dẫn tập luyện theo Hiệp (Sets/Reps) chuyên nghiệp
-  Widget _buildGuidedWorkout(Duration elapsed, LiveWorkoutState liveState) {
-    final currentEx = widget.exercises[_currentExerciseIndex];
-
-    if (_isResting) {
-      return _buildRestScreen();
-    }
-
-    return Column(
-      children: [
-        // Header
-        Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Icon(widget.iconBaiTap, color: VitaTrackTheme.mauChinh, size: 24),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        widget.tenBaiTap, 
-                        style: const TextStyle(color: VitaTrackTheme.mauChu, fontSize: 18, fontWeight: FontWeight.bold),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 16),
-              Text(
-                'Bài ${_currentExerciseIndex + 1}/${widget.exercises.length}',
-                style: const TextStyle(color: VitaTrackTheme.mauChuPhu, fontWeight: FontWeight.bold),
-              )
-            ],
-          ),
-        ),
-
-        // Tiến trình bài tập
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: (_currentExerciseIndex) / widget.exercises.length,
-              color: VitaTrackTheme.mauChinh,
-              backgroundColor: VitaTrackTheme.mauCard,
-              minHeight: 6,
-            ),
-          ),
-        ),
-
-        const Spacer(),
-
-        // Hiển thị tên bài tập con hiện tại
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            children: [
-              Text(
-                currentEx.name,
-                style: const TextStyle(color: VitaTrackTheme.mauChu, fontSize: 32, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: VitaTrackTheme.mauChinh.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  'Hiệp $_currentSetIndex trên ${currentEx.sets}',
-                  style: const TextStyle(color: VitaTrackTheme.mauChinh, fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ),
-              if (currentEx.instructions != null && currentEx.instructions!.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 24, left: 16, right: 16),
-                  child: Text(
-                    currentEx.instructions!,
-                    style: const TextStyle(color: VitaTrackTheme.mauChuPhu, fontSize: 16, height: 1.4, fontStyle: FontStyle.italic),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-            ],
-          ),
-        ),
-
-        const Spacer(),
-
-        // Đo vùng chỉ số động (đếm giây giữ thế hoặc hiện reps)
-        _buildGuidedMetrics(currentEx),
-
-        const Spacer(),
-
-        // Nút nhấn hoàn thành hiệp / Dừng tập
-        Padding(
-          padding: const EdgeInsets.only(left: 24, right: 24, bottom: 40),
-          child: Row(
-            children: [
-              // Nút Thoát hiểm
-              GestureDetector(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  showDialog(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      backgroundColor: VitaTrackTheme.mauCard,
-                      title: const Text('Thoát bài tập?', style: TextStyle(color: VitaTrackTheme.mauChu)),
-                      content: const Text('Bạn có chắc chắn muốn kết thúc bài tập này sớm không?', style: TextStyle(color: VitaTrackTheme.mauChuPhu)),
-                      actions: [
-                        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Hủy', style: TextStyle(color: VitaTrackTheme.mauChuPhu))),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(ctx);
-                            _endWorkout();
-                          },
-                          child: const Text('Kết thúc', style: TextStyle(color: VitaTrackTheme.mauNguyHiem, fontWeight: FontWeight.bold)),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-                child: Container(
-                  width: 60, height: 60,
-                  decoration: const BoxDecoration(color: VitaTrackTheme.mauCard, shape: BoxShape.circle),
-                  child: const Center(child: Icon(Icons.close, color: VitaTrackTheme.mauNguyHiem)),
-                ),
-              ),
-              const SizedBox(width: 16),
-              
-              // Nút hoàn thành chính
-              Expanded(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: VitaTrackTheme.mauChinh,
-                    foregroundColor: VitaTrackTheme.mauNen,
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                    elevation: 4,
-                  ),
-                  onPressed: _nextSet,
-                  child: Text(
-                    (_currentSetIndex == currentEx.sets && _currentExerciseIndex == widget.exercises.length - 1)
-                        ? 'HOÀN THÀNH BÀI TẬP 🏁'
-                        : 'XONG HIỆP 👍',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGuidedMetrics(ExerciseEntity currentEx) {
-    // 1. Nếu là bài giữ thế (Plank) có thời gian durationSeconds > 0
-    if (currentEx.duration.inSeconds > 0) {
-      final double progress = _holdTimeRemaining / currentEx.duration.inSeconds;
-      return Column(
-        children: [
-          SizedBox(
-            width: 160, height: 160,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                CircularProgressIndicator(
-                  value: progress,
-                  backgroundColor: VitaTrackTheme.mauCard,
-                  color: VitaTrackTheme.mauThanhCong,
-                  strokeWidth: 10,
-                  strokeCap: StrokeCap.round,
-                ),
-                Text(
-                  '${_holdTimeRemaining}s',
-                  style: const TextStyle(color: VitaTrackTheme.mauChu, fontSize: 36, fontWeight: FontWeight.bold),
-                )
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (!_isHoldActive && _holdTimeRemaining > 0)
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(backgroundColor: VitaTrackTheme.mauThanhCong),
-                  onPressed: _startHoldTimer,
-                  icon: const Icon(Icons.play_arrow, color: VitaTrackTheme.mauNen),
-                  label: const Text('BẮT ĐẦU GIỮ THẾ', style: TextStyle(color: VitaTrackTheme.mauNen, fontWeight: FontWeight.bold)),
-                )
-              else if (_isHoldActive)
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(backgroundColor: VitaTrackTheme.mauCanhBao),
-                  onPressed: _pauseHoldTimer,
-                  icon: const Icon(Icons.pause, color: VitaTrackTheme.mauNen),
-                  label: const Text('TẠM DỪNG', style: TextStyle(color: VitaTrackTheme.mauNen, fontWeight: FontWeight.bold)),
-                )
-              else
-                const Row(
-                  children: [
-                    Icon(Icons.check_circle, color: VitaTrackTheme.mauThanhCong),
-                    SizedBox(width: 6),
-                    Text('Đã giữ thế thành công!', style: TextStyle(color: VitaTrackTheme.mauThanhCong, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-            ],
-          )
-        ],
-      );
-    }
-
-    // 2. Bài tập tính reps
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        _stat(Icons.local_fire_department, VitaTrackTheme.mauNguyHiem, '${_accumulatedCalories.toStringAsFixed(1)}', 'CALO ĐÃ ĐỐT'),
-        Container(width: 1, height: 60, color: VitaTrackTheme.mauCardNhat),
-        _stat(Icons.fitness_center, VitaTrackTheme.mauThanhCong, '${currentEx.reps}', 'MỤC TIÊU CÁI'),
-      ],
-    );
-  }
-
-  // Màn hình đếm ngược thời gian nghỉ (Rest Screen)
-  Widget _buildRestScreen() {
-    final currentEx = widget.exercises[_currentExerciseIndex];
-    final nextEx = (_currentSetIndex < currentEx.sets) ? currentEx : ((_currentExerciseIndex < widget.exercises.length - 1) ? widget.exercises[_currentExerciseIndex + 1] : null);
-
-    return Container(
-      width: double.infinity,
-      color: const Color(0xFF14221D), // Tone xanh rêu đậm phục hồi
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.spa, color: VitaTrackTheme.mauThanhCong, size: 64),
-          const SizedBox(height: 16),
-          const Text(
-            'HÍT SÂU - THỞ ĐỀU',
-            style: TextStyle(color: VitaTrackTheme.mauThanhCong, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 2),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Nghỉ ngơi hồi sức',
-            style: TextStyle(color: VitaTrackTheme.mauChuPhu, fontSize: 14),
-          ),
-          const SizedBox(height: 32),
-          
-          // Vòng tròn đếm ngược
-          SizedBox(
-            width: 140, height: 140,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                CircularProgressIndicator(
-                  value: _restTimeRemaining / currentEx.restSeconds,
-                  color: VitaTrackTheme.mauThanhCong,
-                  backgroundColor: VitaTrackTheme.mauCard,
-                  strokeWidth: 8,
-                ),
-                Text(
-                  '${_restTimeRemaining}s',
-                  style: const TextStyle(color: VitaTrackTheme.mauChu, fontSize: 40, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 48),
-
-          if (nextEx != null) ...[
-            const Text(
-              'BÀI TIẾP THEO:',
-              style: TextStyle(color: VitaTrackTheme.mauChuPhu, fontSize: 11, letterSpacing: 1),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              nextEx.name,
-              style: const TextStyle(color: VitaTrackTheme.mauChu, fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              (_currentSetIndex < currentEx.sets) 
-                  ? 'Hiệp ${_currentSetIndex + 1} / ${currentEx.sets}'
-                  : 'Hiệp 1 / ${nextEx.sets} (${nextEx.reps > 0 ? "${nextEx.reps} cái" : "${nextEx.duration.inSeconds}s giữ"})',
-              style: const TextStyle(color: VitaTrackTheme.mauChuPhu, fontSize: 13),
-            ),
-            if (nextEx.instructions != null && nextEx.instructions!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 8, left: 32, right: 32),
-                child: Text(
-                  nextEx.instructions!,
-                  style: const TextStyle(color: VitaTrackTheme.mauChuPhu, fontSize: 12, fontStyle: FontStyle.italic),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-          ],
-
-          const SizedBox(height: 60),
-
-          // Nút bỏ qua nghỉ
-          OutlinedButton(
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: VitaTrackTheme.mauThanhCong, width: 1.5),
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            ),
-            onPressed: _skipRest,
-            child: const Text(
-              'TẬP TIẾP LUÔN',
-              style: TextStyle(color: VitaTrackTheme.mauThanhCong, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   // Giao diện phẳng cũ cho chạy bộ / đạp xe liên tục
   Widget _buildLive(Duration elapsed, LiveWorkoutState liveState) {
@@ -717,7 +260,7 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen> with Tick
                       ),
                       onPressed: () {
                         ref.read(liveWorkoutProvider.notifier).resume();
-                        ref.read(workoutElapsedProvider.notifier).resume();
+                        ref.read(workoutTimerNotifierProvider.notifier).resume();
                       },
                       icon: const Icon(Icons.play_arrow, color: VitaTrackTheme.mauNen),
                       label: const Text('TIẾP TỤC TẬP', style: TextStyle(color: VitaTrackTheme.mauNen, fontWeight: FontWeight.bold)),
@@ -731,7 +274,7 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen> with Tick
                       ),
                       onPressed: () {
                         ref.read(liveWorkoutProvider.notifier).pause();
-                        ref.read(workoutElapsedProvider.notifier).pause();
+                        ref.read(workoutTimerNotifierProvider.notifier).pause();
                       },
                       icon: const Icon(Icons.pause, color: VitaTrackTheme.mauNen),
                       label: const Text('NGHỈ GIỮA CHẶNG', style: TextStyle(color: VitaTrackTheme.mauNen, fontWeight: FontWeight.bold)),

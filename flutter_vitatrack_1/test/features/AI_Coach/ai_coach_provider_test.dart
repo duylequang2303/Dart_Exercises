@@ -94,6 +94,7 @@ class FakeSendChatMessageUseCase extends SendChatMessageUseCase {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   late FakeAiCoachRepository fakeRepository;
   late FakeGetChatHistoryUseCase fakeGetHistory;
   late FakeSendChatMessageUseCase fakeSendMessage;

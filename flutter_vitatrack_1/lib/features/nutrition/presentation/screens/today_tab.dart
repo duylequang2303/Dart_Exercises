@@ -13,57 +13,12 @@ class TodayTab extends ConsumerStatefulWidget {
 }
 
 class _TodayTabState extends ConsumerState<TodayTab> {
-  bool _dangTaiDuLieu = true;
-
-  @override
-  void initState() {
-    super.initState();
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (mounted) {
-        setState(() {
-          _dangTaiDuLieu = false;
-        });
-      }
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     final data = ref.watch(nutritionProvider);
 
-    if (_dangTaiDuLieu) {
-      return SizedBox(
-        height: 400,
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CircularProgressIndicator(
-                color: VitaTrackTheme.mauChinh,
-                strokeWidth: 3,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Đang đồng bộ dữ liệu HealthKit...',
-                style: TextStyle(
-                  color: VitaTrackTheme.mauChinh.withValues(alpha: 0.8),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Vui lòng đợi trong giây lát',
-                style: TextStyle(
-                  color: VitaTrackTheme.mauChuPhu,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+    final isLoading = data.caloMucTieu == 0 && data.lichSuBuaAn.isEmpty;
 
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0.0, end: 1.0),
@@ -80,6 +35,8 @@ class _TodayTabState extends ConsumerState<TodayTab> {
       },
       child: Column(
         children: [
+          if (isLoading) const LinearProgressIndicator(color: VitaTrackTheme.mauChinh),
+          if (isLoading) const SizedBox(height: 16),
           _buildCaloriesCard(data),
           const SizedBox(height: 24),
           _buildWaterTracker(data),
@@ -171,15 +128,25 @@ class _TodayTabState extends ConsumerState<TodayTab> {
             ],
           ),
           const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _miniMacro('Protein', '85g', VitaTrackTheme.mauNguyHiem),
-              const SizedBox(width: 8),
-              _miniMacro('Carbs', '210g', VitaTrackTheme.mauCanhBao),
-              const SizedBox(width: 8),
-              _miniMacro('Chất béo', '55g', VitaTrackTheme.mauPhu),
-            ],
+          Builder(
+            builder: (context) {
+              double totalProtein = 0, totalCarbs = 0, totalFat = 0;
+              for (final m in data.lichSuBuaAn) {
+                totalProtein += (m['protein'] as num?)?.toDouble() ?? 0;
+                totalCarbs   += (m['carbs']   as num?)?.toDouble() ?? 0;
+                totalFat     += (m['fat']     as num?)?.toDouble() ?? 0;
+              }
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _miniMacro('Protein', '${totalProtein.toStringAsFixed(0)}g', VitaTrackTheme.mauNguyHiem),
+                  const SizedBox(width: 8),
+                  _miniMacro('Carbs', '${totalCarbs.toStringAsFixed(0)}g', VitaTrackTheme.mauCanhBao),
+                  const SizedBox(width: 8),
+                  _miniMacro('Chất béo', '${totalFat.toStringAsFixed(0)}g', VitaTrackTheme.mauPhu),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -301,9 +268,9 @@ class _TodayTabState extends ConsumerState<TodayTab> {
     final fat = (bua['fat'] as num?)?.toDouble() ?? 0;
     
     // Format số gọn: nếu là số nguyên thì hiện không có .0
-    String _fmt(double v) => v == v.roundToDouble() ? '${v.toInt()}' : v.toStringAsFixed(1);
+    String fmt(double v) => v == v.roundToDouble() ? '${v.toInt()}' : v.toStringAsFixed(1);
     
-    final chiTiet = bua['chiTiet'] ?? 'Protein: ${_fmt(protein)}g | Carbs: ${_fmt(carbs)}g | Chất béo: ${_fmt(fat)}g';
+    final chiTiet = bua['chiTiet'] ?? 'Protein: ${fmt(protein)}g | Carbs: ${fmt(carbs)}g | Chất béo: ${fmt(fat)}g';
 
     // Xác định icon phù hợp theo loại bữa ăn
     IconData icon = Icons.restaurant_rounded;
@@ -359,11 +326,11 @@ class _TodayTabState extends ConsumerState<TodayTab> {
                 // Thanh hiển thị Macro thực tế từ Firestore
                 Row(
                   children: [
-                    _chipMacroGiay('P: ${_fmt(protein)}g', VitaTrackTheme.mauNguyHiem),
+                    _chipMacroGiay('P: ${fmt(protein)}g', VitaTrackTheme.mauNguyHiem),
                     const SizedBox(width: 8),
-                    _chipMacroGiay('C: ${_fmt(carbs)}g', VitaTrackTheme.mauCanhBao),
+                    _chipMacroGiay('C: ${fmt(carbs)}g', VitaTrackTheme.mauCanhBao),
                     const SizedBox(width: 8),
-                    _chipMacroGiay('F: ${_fmt(fat)}g', VitaTrackTheme.mauChinh),
+                    _chipMacroGiay('F: ${fmt(fat)}g', VitaTrackTheme.mauChinh),
                   ],
                 ),
               ],

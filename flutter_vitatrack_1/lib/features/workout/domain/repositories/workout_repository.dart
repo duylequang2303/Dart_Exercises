@@ -11,10 +11,12 @@ abstract class WorkoutRepository {
     required int iconCodePoint,
     required String type,
     required List<ExerciseEntity> exercises,
+    String? userId,
   });
   Future<void> updateProgress(Duration elapsed);
   Future<List<WorkoutEntity>> getHistory();
   Future<void> deleteWorkout(String id);
   Future<void> saveWorkoutPlan(WorkoutEntity plan);
   Future<List<WorkoutEntity>> getWorkoutPlans();
+  Future<Map<String, dynamic>> parseWorkoutPlan(String userInput);
 }

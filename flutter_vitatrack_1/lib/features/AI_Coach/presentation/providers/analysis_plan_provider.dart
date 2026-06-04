@@ -25,30 +25,9 @@ final userHealthContextProvider = Provider<UserHealthContext>((ref) {
     totalFat += (meal['fat'] as num?)?.toDouble() ?? 0;
   }
 
-  // Tính dailyCaloriesGoal bằng công thức Mifflin-St Jeor
-  int dailyCaloriesGoal = nutrition.caloMucTieu > 0 ? nutrition.caloMucTieu : 2000;
-  if (profile?.chieuCao != null && profile?.canNang != null) {
-    final h = profile!.chieuCao!;
-    final w = profile.canNang!;
-    final age = profile.tuoi ?? 25;
-    final bool isNam = (profile.gioiTinh ?? 'Nam') == 'Nam';
-    final bmr = isNam
-        ? (10 * w + 6.25 * h - 5 * age + 5)
-        : (10 * w + 6.25 * h - 5 * age - 161);
-    final actFactor = switch (profile.cuongDo ?? 'Vừa phải') {
-      'Ít vận động'   => 1.2,
-      'Vừa phải'      => 1.375,
-      'Năng động'     => 1.55,
-      'Vận động viên' => 1.725,
-      _               => 1.375,
-    };
-    final tdee = bmr * actFactor;
-    dailyCaloriesGoal = switch (profile.mucTieu ?? 'Giữ dáng') {
-      'Giảm cân' => (tdee - 500).toInt(),
-      'Tăng cơ'  => (tdee + 300).toInt(),
-      _          => tdee.toInt(),
-    };
-  }
+  int dailyCaloriesGoal = (profile?.caloriesGoal != null && profile!.caloriesGoal! > 0)
+      ? profile.caloriesGoal!
+      : (nutrition.caloMucTieu > 0 ? nutrition.caloMucTieu : 2000);
   
   final historyAsync = ref.watch(workoutHistoryProvider);
   final workouts = historyAsync.value ?? [];
@@ -67,7 +46,6 @@ final userHealthContextProvider = Provider<UserHealthContext>((ref) {
     activeCaloriesBurned: calBurned,
     waterIntakeMl: nutrition.soLyNuoc * 250,
     sleepHours: health.sleepHours == 0.0 ? 7.5 : health.sleepHours,
-    heartRateBpm: health.heartRate == 0 ? 72 : health.heartRate,
     dailyStepsGoal: 10000,
     dailyCaloriesGoal: dailyCaloriesGoal,
     dailyWaterGoalMl: 2500,

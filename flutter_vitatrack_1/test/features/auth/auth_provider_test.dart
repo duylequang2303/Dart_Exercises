@@ -60,6 +60,12 @@ class FakeAuthService implements AuthService {
     return true;
   }
 
+  @override
+  Future<void> deleteAccount(String uid) async {
+    _currentUser = null;
+    _controller.add(null);
+  }
+
   void close() {
     _controller.close();
   }

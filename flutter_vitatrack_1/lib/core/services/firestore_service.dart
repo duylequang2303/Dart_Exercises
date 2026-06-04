@@ -7,6 +7,16 @@ class FirestoreService {
   FirestoreService({FirebaseFirestore? firestore})
       : _firestore = firestore ?? FirebaseFirestore.instance;
 
+  FirebaseFirestore get instance => _firestore;
+
+  Future<T> runTransaction<T>(Future<T> Function(Transaction transaction) updateFunction) async {
+    try {
+      return await _firestore.runTransaction(updateFunction);
+    } catch (e) {
+      throw Exception('Lỗi khi thực hiện transaction: $e');
+    }
+  }
+
   Future<void> setDocument(String collection, String docId, Map<String, dynamic> data) async {
     try {
       await _firestore.collection(collection).doc(docId).set(data);

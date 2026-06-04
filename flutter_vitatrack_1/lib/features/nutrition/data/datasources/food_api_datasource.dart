@@ -46,24 +46,30 @@ class FoodApiDataSource {
           'messages': [
             {
               'role': 'user',
-              'content': '''Phân tích tên món ăn/thực phẩm: "$query".
-Nếu đây KHÔNG PHẢI là tên thức ăn, đồ uống hoặc nguyên liệu (ví dụ: là đồ vật như cây kéo, tên người, từ vô nghĩa), hãy trả về:
-[
-  {
-    "error": "Đây không phải là thức ăn hoặc đồ uống"
-  }
-]
-Nếu là thức ăn/đồ uống, ước tính thông tin dinh dưỡng và trả về ĐÚNG định dạng JSON sau:
-[
-  {
-    "tenMonAn": "Tên đầy đủ của món",
-    "calo": 200,
-    "protein": 10.0,
-    "carbs": 25.0,
-    "fat": 5.0
-  }
-]
-Lưu ý: ước tính cho 100g hoặc 1 khẩu phần thông thường.''',
+              'content': '''You are a certified nutritionist specializing in Vietnamese cuisine.
+
+Task:
+Estimate nutrition values for the following food.
+
+Food:
+$query
+
+Rules:
+1. Return ONLY JSON.
+2. Values must represent one normal serving.
+3. Protein, carbs, fat must be realistic.
+4. Calories should roughly match the macros.
+5. If uncertain, provide the most common estimate.
+
+JSON:
+
+{
+  "food_name": "",
+  "calories": 0,
+  "protein": 0,
+  "carbs": 0,
+  "fat": 0
+}''',
             }
           ],
           'temperature': 0.2,
@@ -78,36 +84,27 @@ Lưu ý: ước tính cho 100g hoặc 1 khẩu phần thông thường.''',
 
       final text = choices[0]['message']?['content'] as String? ?? '';
 
-      // Trích xuất JSON array
-      final start = text.indexOf('[');
-      final end = text.lastIndexOf(']');
+      // Trích xuất JSON object
+      final start = text.indexOf('{');
+      final end = text.lastIndexOf('}');
       if (start == -1 || end == -1 || end <= start) return [];
 
       final jsonStr = text.substring(start, end + 1);
       final dynamic parsed = jsonDecode(jsonStr);
-      if (parsed is! List || parsed.isEmpty) return [];
+      if (parsed is! Map<String, dynamic>) return [];
 
-      // Kiểm tra nếu AI trả về lỗi (không phải thức ăn)
-      final firstItem = parsed[0] as Map<String, dynamic>;
-      if (firstItem.containsKey('error')) {
-        throw Exception(firstItem['error']);
-      }
+      final map = parsed;
+      final food = FoodEntity(
+        tenMonAn: map['food_name'] as String? ?? query,
+        calo: (map['calories'] as num?)?.toInt() ?? 0,
+        protein: (map['protein'] as num?)?.toDouble() ?? 0,
+        carbs: (map['carbs'] as num?)?.toDouble() ?? 0,
+        fat: (map['fat'] as num?)?.toDouble() ?? 0,
+        hinhAnh: null,
+      );
 
-      return parsed.map((item) {
-        final map = item as Map<String, dynamic>;
-        return FoodEntity(
-          tenMonAn: map['tenMonAn'] as String? ?? query,
-          calo: (map['calo'] as num?)?.toInt() ?? 0,
-          protein: (map['protein'] as num?)?.toDouble() ?? 0,
-          carbs: (map['carbs'] as num?)?.toDouble() ?? 0,
-          fat: (map['fat'] as num?)?.toDouble() ?? 0,
-          hinhAnh: null,
-        );
-      }).where((f) => f.calo > 0).toList();
+      return food.calo > 0 ? [food] : [];
     } catch (e) {
-      if (e.toString().contains('Đây không phải là thức ăn')) {
-        rethrow;
-      }
       return [];
     }
   }
