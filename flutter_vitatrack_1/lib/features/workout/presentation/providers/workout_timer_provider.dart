@@ -133,20 +133,39 @@ class WorkoutTimerNotifier extends StateNotifier<WorkoutTimerState> {
     _startTimer();
   }
 
+  // ✅ FIX 1: Add try-catch protection
   void _startTimer() {
     _timer?.cancel();
-    state = state.copyWith(isRunning: true, isPaused: false);
+    
+    try {
+      state = state.copyWith(isRunning: true, isPaused: false);
+    } catch (e) {
+      // Notifier disposed, exit
+      return;
+    }
+    
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      final newElapsed = state.elapsed + const Duration(seconds: 1);
-      state = state.copyWith(elapsed: newElapsed);
-      _track.execute(newElapsed);
+      try {
+        final newElapsed = state.elapsed + const Duration(seconds: 1);
+        state = state.copyWith(elapsed: newElapsed);
+        _track.execute(newElapsed);
+      } catch (e) {
+        // Notifier disposed or error, cancel timer
+        _timer?.cancel();
+        _timer = null;
+      }
     });
   }
 
   void pause() {
     _timer?.cancel();
     _timer = null;
-    state = state.copyWith(isPaused: true, isRunning: false);
+    
+    try {
+      state = state.copyWith(isPaused: true, isRunning: false);
+    } catch (e) {
+      // Notifier disposed
+    }
   }
 
   void resume() {
@@ -166,6 +185,8 @@ class WorkoutTimerNotifier extends StateNotifier<WorkoutTimerState> {
   }) async {
     _timer?.cancel();
     _timer = null;
+    _countdownTimer?.cancel();
+    _countdownTimer = null;
     
     try {
       final userProvider = _ref.read(nguoiDungHienTaiProvider);
@@ -185,33 +206,57 @@ class WorkoutTimerNotifier extends StateNotifier<WorkoutTimerState> {
       // Ignore if not in context
     } finally {
       _onStop();
-      state = state.copyWith(isRunning: false, isPaused: false);
+      try {
+        state = state.copyWith(isRunning: false, isPaused: false);
+      } catch (e) {
+        // Notifier disposed
+      }
     }
   }
 
   void reset() {
     _timer?.cancel();
     _timer = null;
-    state = const WorkoutTimerState();
+    _countdownTimer?.cancel();
+    _countdownTimer = null;
+    
+    try {
+      state = const WorkoutTimerState();
+    } catch (e) {
+      // Notifier disposed
+    }
   }
 
+  // ✅ FIX 2: Add complete try-catch protection to startCountdown
   void startCountdown(int seconds) {
     _countdownTimer?.cancel();
-    state = state.copyWith(countdown: Duration(seconds: seconds));
+    
+    // Initial state set
+    try {
+      state = state.copyWith(countdown: Duration(seconds: seconds));
+    } catch (e) {
+      // Notifier already disposed, exit
+      return;
+    }
 
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (state.countdown == null) {
-        t.cancel();
-        return;
-      }
-      final remaining = state.countdown!.inSeconds - 1;
+    int remaining = seconds;
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      remaining--;
       
-      if (remaining > 0) {
-        state = state.copyWith(countdown: Duration(seconds: remaining));
-      } else {
-        t.cancel();
-        state = state.copyWith(clearCountdown: true);
-        _startTimer();
+      try {
+        if (remaining > 0) {
+          state = state.copyWith(countdown: Duration(seconds: remaining));
+        } else {
+          timer.cancel();
+          _countdownTimer = null;
+          state = state.copyWith(clearCountdown: true);
+          // Start main timer after countdown finishes
+          _startTimer();
+        }
+      } catch (e) {
+        // Notifier disposed or error, cancel timer
+        timer.cancel();
+        _countdownTimer = null;
       }
     });
   }
@@ -219,7 +264,12 @@ class WorkoutTimerNotifier extends StateNotifier<WorkoutTimerState> {
   void stopCountdown() {
     _countdownTimer?.cancel();
     _countdownTimer = null;
-    state = state.copyWith(clearCountdown: true);
+    
+    try {
+      state = state.copyWith(clearCountdown: true);
+    } catch (e) {
+      // Notifier disposed
+    }
   }
 
   @override

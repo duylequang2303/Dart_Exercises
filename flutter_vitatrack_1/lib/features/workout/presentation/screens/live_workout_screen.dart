@@ -39,11 +39,13 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen> with Tick
       }
     });
 
-    ref.read(workoutTimerNotifierProvider.notifier).reset();
-    ref.read(workoutTimerNotifierProvider.notifier).startCountdown(3);
-
+    // ✅ FIX: Wrap ALL ref.read() calls in addPostFrameCallback
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(liveWorkoutProvider.notifier).init(widget.tenBaiTap);
+      if (mounted) {
+        ref.read(workoutTimerNotifierProvider.notifier).reset();
+        ref.read(workoutTimerNotifierProvider.notifier).startCountdown(3);
+        ref.read(liveWorkoutProvider.notifier).init(widget.tenBaiTap);
+      }
     });
   }
 
